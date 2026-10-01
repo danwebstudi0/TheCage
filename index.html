@@ -698,102 +698,69 @@ button:disabled{
 
 <div id="app">
 
-  <header class="header">
+<header class="header">
 
-    <div class="headerTop">
+  <div class="headerTop">
 
-      <div class="logo">
-        THE <span>CAGE</span>
-      </div>
-
-      <div
-        id="hBalance"
-        class="balance">
-        250 C₵
-      </div>
-
+    <div class="logo">
+      THE <span>CAGE</span>
     </div>
 
-    <div class="headerStats">
-
-      <div class="hstat">
-        ДОХОД:
-        <b id="hIncome">+10/ч</b>
-      </div>
-
-      <div
-        id="hShield"
-        class="hstat">
-        🛡 NOVICE
-      </div>
-
+    <div id="hBalance" class="balance">
+      250 C₵
     </div>
 
-  </header>
+  </div>
 
-  <main>
+  <div class="headerStats">
 
-    <section
-      id="scr-terminal"
-      class="screen active">
-    </section>
+    <div class="hstat">
+      ДОХОД:
+      <b id="hIncome">+10/ч</b>
+    </div>
 
-    <section
-      id="scr-market"
-      class="screen">
-    </section>
+    <div id="hShield" class="hstat">
+      🛡 NOVICE
+    </div>
 
-    <section
-      id="scr-chain"
-      class="screen">
-    </section>
+  </div>
 
-    <section
-      id="scr-profile"
-      class="screen">
-    </section>
+</header>
 
-  </main>
+<main>
+
+<section id="scr-terminal" class="screen active"></section>
+<section id="scr-market" class="screen"></section>
+<section id="scr-chain" class="screen"></section>
+<section id="scr-profile" class="screen"></section>
+
+</main>
 
 </div>
 
 <div id="toasts"></div>
 
-<button
-  id="speedBtn"
-  onclick="toggleSpeed()">
+<button id="speedBtn" onclick="toggleSpeed()">
   ⚡ ×1
 </button>
 
 <nav class="nav">
 
-  <button
-    class="tab active"
-    data-t="terminal"
-    onclick="go('terminal')">
-    ◈<br>ТЕРМИНАЛ
-  </button>
+<button class="tab active" data-t="terminal" onclick="go('terminal')">
+  ◈<br>ТЕРМИНАЛ
+</button>
 
-  <button
-    class="tab"
-    data-t="market"
-    onclick="go('market')">
-    ◇<br>РЫНОК
-  </button>
+<button class="tab" data-t="market" onclick="go('market')">
+  ◇<br>РЫНОК
+</button>
 
-  <button
-    class="tab"
-    data-t="chain"
-    onclick="go('chain')">
-    ⛓<br>ЦЕПЬ
-  </button>
+<button class="tab" data-t="chain" onclick="go('chain')">
+  ⛓<br>ЦЕПЬ
+</button>
 
-  <button
-    class="tab"
-    data-t="profile"
-    onclick="go('profile')">
-    ◎<br>ПРОФИЛЬ
-  </button>
+<button class="tab" data-t="profile" onclick="go('profile')">
+  ◎<br>ПРОФИЛЬ
+</button>
 
 </nav>
 
@@ -872,11 +839,15 @@ function playerName(){
 /* ================= STATE ================= */
 
 function genCode(){
+
  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
  let s='';
+
  for(let i=0;i<5;i++){
    s+=c[Math.floor(Math.random()*c.length)];
  }
+
  return s;
 }
 
@@ -941,7 +912,6 @@ function load(){
    if(raw){
 
      const s=JSON.parse(raw);
-
      const d=defaultState();
 
      s.lastReal=Date.now();
@@ -988,15 +958,15 @@ function load(){
      if(typeof s.nextRaid!=='number')
        s.nextRaid=Date.now()+26*H;
 
+     if(typeof s.refCount!=='number')
+       s.refCount=0;
+
      return s;
    }
 
  }catch(e){
 
-   console.error(
-     'LOAD ERROR',
-     e
-   );
+   console.error('LOAD ERROR',e);
 
  }
 
@@ -1025,9 +995,7 @@ function rnd(a,b){
 
 function pick(arr){
  return arr[
-   Math.floor(
-     Math.random()*arr.length
-   )
+   Math.floor(Math.random()*arr.length)
  ];
 }
 
@@ -1049,17 +1017,13 @@ function log(type,amount,note){
 
 function toast(msg,kind){
 
- const box=
-   document.getElementById('toasts');
+ const box=document.getElementById('toasts');
 
  if(!box)return;
 
- const d=
-   document.createElement('div');
+ const d=document.createElement('div');
 
- d.className=
-   'toast'+
-   (kind?' '+kind:'');
+ d.className='toast'+(kind?' '+kind:'');
 
  d.textContent=msg;
 
@@ -1092,8 +1056,7 @@ function fmtT(ms){
  if(ms<=0)
    return '00:00:00';
 
- const s=
-   Math.floor(ms/1000);
+ const s=Math.floor(ms/1000);
 
  const h=String(
    Math.floor(s/3600)
@@ -1116,17 +1079,13 @@ function beep(f){
 
  try{
 
-   AC=AC||
-     new(
-       window.AudioContext||
-       window.webkitAudioContext
-     )();
+   AC=AC||new(
+     window.AudioContext||
+     window.webkitAudioContext
+   )();
 
-   const o=
-     AC.createOscillator();
-
-   const g=
-     AC.createGain();
+   const o=AC.createOscillator();
+   const g=AC.createGain();
 
    o.frequency.value=f||660;
    o.type='square';
@@ -1143,9 +1102,7 @@ function beep(f){
      AC.currentTime+.08
    );
 
-   o.stop(
-     AC.currentTime+.09
-   );
+   o.stop(AC.currentTime+.09);
 
  }catch(e){}
 }
@@ -1153,9 +1110,7 @@ function beep(f){
 /* ================= ECONOMY ================= */
 
 function card(key){
- return CARDS.find(
-   c=>c.key===key
- );
+ return CARDS.find(c=>c.key===key);
 }
 
 function farmIncome(f){
@@ -1179,8 +1134,7 @@ function synergyMult(){
 
    if(!c)return;
 
-   cnt[c.rarity]=
-     (cnt[c.rarity]||0)+1;
+   cnt[c.rarity]=(cnt[c.rarity]||0)+1;
  });
 
  const n=Math.max(
@@ -1229,8 +1183,7 @@ function taxIncome(){
 
 function totalIncome(){
 
- return personalIncome()+
-   taxIncome();
+ return personalIncome()+taxIncome();
 }
 
 function upgradeCost(f){
@@ -1260,8 +1213,7 @@ function ransomCost(){
  if(!S.owner)
    return 0;
 
- const hrs=
-   (S.v-S.owner.since)/H;
+ const hrs=(S.v-S.owner.since)/H;
 
  return Math.round(
    S.owner.price*
@@ -1297,9 +1249,8 @@ async function syncPlayer(){
 
  const id=playerId();
 
- if(!id){
+ if(!id)
    return null;
- }
 
  try{
 
@@ -1362,6 +1313,7 @@ async function loadMyRelations(){
        .maybeSingle();
 
    if(meError){
+
      console.error(meError);
      return;
    }
@@ -1404,6 +1356,7 @@ async function loadMyRelations(){
              S.owner?.since||
              Date.now()
          };
+
        }
 
      }
@@ -1435,11 +1388,17 @@ async function loadMyRelations(){
 
      S.vassals=
        (vassals||[]).map(p=>({
+
          id:String(p.id),
+
          name:p.username||'Игрок',
+
          income:Number(p.income||10),
+
          lvl:1,
+
          subs:[]
+
        }));
 
    }
@@ -1459,50 +1418,43 @@ async function loadMyRelations(){
 
 async function processReferral(){
 
-alert(
-  'START PARAM: ' +
-  (
-    tg?.initDataUnsafe?.start_param ||
-    'НЕТ'
-  )
-);
-  
  const id=playerId();
 
- if(!id)return;
+ if(!id)
+   return;
 
  const startParam=
    tg?.initDataUnsafe?.start_param;
 
- if(!startParam)return;
+ console.log(
+   'THE CAGE START PARAM:',
+   startParam
+ );
 
- if(
-   !String(startParam)
-     .startsWith('ref_')
- )return;
+ if(!startParam)
+   return;
+
+ const value=String(startParam);
+
+ if(!value.startsWith('ref_'))
+   return;
 
  const code=
-   String(startParam)
+   value
      .substring(4)
      .trim();
 
- if(!code)return;
+ if(!code)
+   return;
 
  try{
 
-   const {data:me}=
-     await sb
-       .from('players')
-       .select(
-         'id,vassal_of'
-       )
-       .eq('id',id)
-       .maybeSingle();
+   /* ИЩЕМ ВЛАДЕЛЬЦА КОДА */
 
-   if(me?.vassal_of)
-     return;
-
-   const {data:owner,error}=
+   const {
+     data:owner,
+     error:ownerError
+   }=
      await sb
        .from('players')
        .select(
@@ -1514,42 +1466,100 @@ alert(
        )
        .maybeSingle();
 
-   if(error){
+   if(ownerError){
 
      console.error(
        'Referral owner error:',
-       error
+       ownerError
+     );
+
+     toast(
+       'ОШИБКА ПОИСКА ВЛАДЕЛЬЦА',
+       'bad'
      );
 
      return;
    }
 
    if(!owner){
+
      console.log(
-       'Referral code not found'
+       'Referral code not found:',
+       code
      );
+
+     toast(
+       'КОД ВЛАДЕЛЬЦА НЕ НАЙДЕН',
+       'bad'
+     );
+
      return;
    }
+
+   /* НЕЛЬЗЯ ПРИГЛАСИТЬ САМОГО СЕБЯ */
 
    if(
      String(owner.id)===
      String(id)
    ){
+
      return;
    }
 
-   const {error:updateError}=
+   /* ПРОВЕРЯЕМ ТЕКУЩЕГО ИГРОКА */
+
+   const {
+     data:me,
+     error:meError
+   }=
+     await sb
+       .from('players')
+       .select(
+         'id,vassal_of'
+       )
+       .eq(
+         'id',
+         id
+       )
+       .maybeSingle();
+
+   if(meError){
+
+     console.error(
+       'Referral me error:',
+       meError
+     );
+
+     return;
+   }
+
+   /* ЕСЛИ УЖЕ ЕСТЬ ХОЗЯИН — НИЧЕГО НЕ МЕНЯЕМ */
+
+   if(me?.vassal_of){
+
+     return;
+   }
+
+   /* НАЗНАЧАЕМ ВЛАДЕЛЬЦА */
+
+   const {
+     data:updateData,
+     error:updateError
+   }=
      await sb
        .from('players')
        .update({
-         vassal_of:
-           String(owner.id)
+         vassal_of:String(owner.id)
        })
-       .eq('id',id)
+       .eq(
+         'id',
+         id
+       )
        .is(
          'vassal_of',
          null
-       );
+       )
+       .select();
 
    if(updateError){
 
@@ -1558,19 +1568,43 @@ alert(
        updateError
      );
 
+     toast(
+       'ОШИБКА НАЗНАЧЕНИЯ ВАССАЛА',
+       'bad'
+     );
+
      return;
    }
 
+   /* ЕСЛИ UPDATE НЕ ИЗМЕНИЛ СТРОКУ */
+
+   if(
+     !updateData||
+     !updateData.length
+   ){
+
+     console.log(
+       'Referral update returned no rows'
+     );
+
+     return;
+   }
+
+   /* ОБНОВЛЯЕМ ЛОКАЛЬНО */
+
    S.owner={
      id:String(owner.id),
+
      name:
        owner.username||
        'Игрок',
+
      price:Number(
        owner.market_value||
        owner.income*24||
        240
      ),
+
      since:S.v
    };
 
@@ -1593,13 +1627,63 @@ alert(
      'good'
    );
 
+   /* УВЕЛИЧИВАЕМ СЧЁТЧИК У ВЛАДЕЛЬЦА */
+
+   const {
+     data:ownerRow,
+     error:ownerRowError
+   }=
+     await sb
+       .from('players')
+       .select(
+         'id,ref_count'
+       )
+       .eq(
+         'id',
+         String(owner.id)
+       )
+       .maybeSingle();
+
+   /*
+      В старой таблице ref_count может отсутствовать.
+      Поэтому ошибка здесь не ломает регистрацию вассала.
+   */
+
+   if(
+     !ownerRowError&&
+     ownerRow&&
+     typeof ownerRow.ref_count==='number'
+   ){
+
+     await sb
+       .from('players')
+       .update({
+         ref_count:
+           ownerRow.ref_count+1
+       })
+       .eq(
+         'id',
+         String(owner.id)
+       );
+
+   }
+
    save();
+
+   await loadMyRelations();
+
+   render();
 
  }catch(e){
 
    console.error(
-     'Referral error:',
+     'Referral exception:',
      e
+   );
+
+   toast(
+     'ОШИБКА REFERRAL',
+     'bad'
    );
  }
 }
@@ -1703,11 +1787,8 @@ function collect(){
      12*H
    );
 
- const personal=
-   personalIncome();
-
- const tax=
-   taxIncome();
+ const personal=personalIncome();
+ const tax=taxIncome();
 
  const gross=
    (personal+tax)/
@@ -1755,8 +1836,7 @@ function collect(){
    'COLLECT',
    net,
    S.owner?
-   'налог хозяину −'+
-   fmt(taxPay):
+   'налог хозяину −'+fmt(taxPay):
    ''
  );
 
@@ -1838,8 +1918,7 @@ function upgradeFarm(i){
    return;
  }
 
- const cost=
-   upgradeCost(f);
+ const cost=upgradeCost(f);
 
  if(S.balance<cost){
 
@@ -1961,8 +2040,7 @@ async function buyBot(id){
 
  if(!b)return;
 
- const price=
-   botPrice(b);
+ const price=botPrice(b);
 
  if(S.balance<price){
 
@@ -2037,7 +2115,10 @@ async function buyBot(id){
      return;
    }
 
-   const {data:updateData,error:updateError}=
+   const {
+     data:updateData,
+     error:updateError
+   }=
      await sb
        .from('players')
        .update({
@@ -2143,8 +2224,7 @@ async function ransom(){
 
  if(!S.owner)return;
 
- const cost=
-   ransomCost();
+ const cost=ransomCost();
 
  if(S.balance<cost){
 
@@ -2565,6 +2645,12 @@ async function startDatabase(){
 
    await syncPlayer();
 
+   /*
+      ВАЖНО:
+      сначала создаём игрока в Supabase,
+      затем обрабатываем referral.
+   */
+
    await processReferral();
 
    await loadMyRelations();
@@ -2581,9 +2667,8 @@ async function startDatabase(){
    );
 
  }
-
 }
-  
+
 /* ================= NAVIGATION ================= */
 
 function go(t){
@@ -2704,11 +2789,9 @@ function farmCardHTML(f,i){
 
  if(!c)return '';
 
- const r=
-   RARITY[c.rarity];
+ const r=RARITY[c.rarity];
 
- const oh=
-   f.heat>=100;
+ const oh=f.heat>=100;
 
  return `
  <div
@@ -2813,8 +2896,7 @@ function renderTerminal(){
 
  if(!el)return;
 
- const p=
-   pendingCollect();
+ const p=pendingCollect();
 
  const capPct=
    Math.min(
@@ -2964,8 +3046,7 @@ function renderTerminal(){
  ${
    CARDS.map(c=>{
 
-     const r=
-       RARITY[c.rarity];
+     const r=RARITY[c.rarity];
 
      const owned=
        S.farms.filter(
@@ -3005,8 +3086,7 @@ function renderTerminal(){
 
        </div>
 
-       <div
-         class="finc">
+       <div class="finc">
 
          +${fmt(c.income)}/ч
 
@@ -3042,8 +3122,7 @@ function renderTerminal(){
 
 function botCardHTML(b){
 
- const price=
-   botPrice(b);
+ const price=botPrice(b);
 
  return `
 
@@ -3244,8 +3323,7 @@ function renderChain(){
 
  if(S.owner){
 
-   const cost=
-     ransomCost();
+   const cost=ransomCost();
 
    const pct=
      cost>0?
@@ -3302,8 +3380,7 @@ function renderChain(){
 
      </div>
 
-     <div
-       class="mini">
+     <div class="mini">
 
        накоплено
        ${fmt(S.balance)}
@@ -3434,8 +3511,7 @@ function renderChain(){
 
    </div>
 
-   <div
-     class="fbtns">
+   <div class="fbtns">
 
      <button
        class="fbtn primary"
@@ -3795,138 +3871,6 @@ window.addEventListener(
 render();
 
 startDatabase();
-
-async function processReferral(){
-
-  const id=playerId();
-
-  if(!id)return;
-
-  const startParam=
-    tg?.initDataUnsafe?.start_param;
-
-  alert(
-    'START PARAM: '+
-    (startParam||'НЕТ')
-  );
-
-  if(!startParam)return;
-
-  const value=String(startParam);
-
-  if(!value.startsWith('ref_'))
-    return;
-
-  const code=value.substring(4).trim();
-
-  if(!code)return;
-
-  try{
-
-    const {data:owner,error:ownerError}=
-      await sb
-        .from('players')
-        .select(
-          'id,username,market_value,income'
-        )
-        .eq('ref_code',code)
-        .maybeSingle();
-
-    if(ownerError){
-
-      alert(
-        'ОШИБКА OWNER: '+
-        ownerError.message
-      );
-
-      return;
-    }
-
-    if(!owner){
-
-      alert(
-        'КОД НЕ НАЙДЕН: '+
-        code
-      );
-
-      return;
-    }
-
-    if(String(owner.id)===String(id))
-      return;
-
-    const {data:me}=await sb
-      .from('players')
-      .select('id,vassal_of')
-      .eq('id',id)
-      .maybeSingle();
-
-    if(me?.vassal_of)
-      return;
-
-    const {data:updateData,error:updateError}=
-      await sb
-        .from('players')
-        .update({
-          vassal_of:String(owner.id)
-        })
-        .eq('id',id)
-        .is('vassal_of',null)
-        .select();
-
-    if(updateError){
-
-      alert(
-        'ОШИБКА UPDATE: '+
-        updateError.message
-      );
-
-      return;
-    }
-
-    if(!updateData?.length){
-
-      alert('ВАССАЛ НЕ УСТАНОВЛЕН');
-
-      return;
-    }
-
-    S.owner={
-      id:String(owner.id),
-      name:owner.username||'Игрок',
-      price:Number(
-        owner.market_value||
-        owner.income*24||
-        240
-      ),
-      since:S.v
-    };
-
-    toast(
-      '⛓ ТЫ СТАЛ ВАССАЛОМ @'+
-      (owner.username||'Игрок'),
-      'good'
-    );
-
-    save();
-
-    alert(
-      'ГОТОВО! ВАССАЛ: @'+
-      (owner.username||'Игрок')
-    );
-
-  }catch(e){
-
-    alert(
-      'ОШИБКА: '+e.message
-    );
-
-    console.error(
-      'Referral error:',
-      e
-    );
-  }
-}
 
 </script>
 
