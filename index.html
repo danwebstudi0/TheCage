@@ -2557,6 +2557,24 @@ async function startDatabase(){
 
    await syncPlayer();
 
+   await processReferral();
+
+   await loadMyRelations();
+
+   await loadRealMarket();
+
+   render();
+
+ }catch(e){
+
+   console.error(
+     'Database start error:',
+     e
+   );
+
+ }
+
+}
   
 /* ================= NAVIGATION ================= */
 
