@@ -1,5 +1,801 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+
+<title>THE CAGE</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --bg:#050509;
+  --panel:#0b0b12;
+  --panel2:#10101a;
+  --line:#222232;
+  --text:#f3f4f6;
+  --muted:#737386;
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --green:#22c55e;
+  --red:#ef4444;
+  --violet:#8b5cf6;
+  --violet2:#a78bfa;
+  --orange:#f59e0b;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+
+body{
+  overflow-x:hidden;
+}
+
+button{
+  font:inherit;
+  cursor:pointer;
+}
+
+button:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
+
+.mono,
+.finc,
+.price,
+.cost,
+.jitem,
+.mini,
+.ds,
+.inf{
+  font-family:monospace;
+}
+
+#app{
+  width:100%;
+  max-width:700px;
+  margin:auto;
+  min-height:100vh;
+  padding-bottom:80px;
+}
+
+/* BOOT */
+
+#boot{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#030305;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:25px;
+  transition:opacity .6s;
+}
+
+.bootBox{
+  width:100%;
+  max-width:520px;
+  border:1px solid #29293b;
+  background:#07070d;
+  padding:22px;
+  box-shadow:0 0 40px rgba(59,130,246,.08);
+}
+
+.bootTitle{
+  color:var(--blue2);
+  font-family:monospace;
+  font-size:18px;
+  font-weight:800;
+  margin-bottom:15px;
+}
+
+#bootText{
+  color:#8da0bd;
+  white-space:pre-line;
+  font:12px/1.8 monospace;
+}
+
+#bootEnter{
+  display:none;
+  color:var(--green);
+  font:11px monospace;
+  margin-top:18px;
+  animation:blink 1s infinite;
+}
+
+@keyframes blink{
+  50%{opacity:.3}
+}
+
+/* HEADER */
+
+.header{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:rgba(5,5,9,.94);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  padding:12px;
+}
+
+.headerTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.logo{
+  font:bold 18px monospace;
+  letter-spacing:2px;
+}
+
+.logo span{
+  color:var(--red);
+}
+
+.balance{
+  color:var(--blue2);
+  font:bold 16px monospace;
+}
+
+.headerStats{
+  display:flex;
+  gap:8px;
+  margin-top:9px;
+  flex-wrap:wrap;
+}
+
+.hstat{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:6px 9px;
+  font:10px monospace;
+  color:#9ca3af;
+}
+
+.hstat b{
+  color:#fff;
+}
+
+#hIncome{
+  color:var(--green);
+}
+
+#hShield{
+  color:var(--green);
+}
+
+#hShield.none{
+  color:var(--red);
+}
+
+/* SCREENS */
+
+.screen{
+  display:none;
+  padding:12px;
+}
+
+.screen.active{
+  display:block;
+}
+
+/* PANELS */
+
+.panel{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:13px;
+  margin-bottom:12px;
+}
+
+.ptitle{
+  font:10px monospace;
+  color:#9292a8;
+  letter-spacing:1.2px;
+  margin-bottom:10px;
+}
+
+.sectTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin:15px 0 8px;
+  font:bold 10px monospace;
+  color:#8d8da0;
+  letter-spacing:1px;
+}
+
+.mini{
+  color:var(--muted);
+  font-size:9px;
+}
+
+/* BUTTONS */
+
+#collectBtn{
+  width:100%;
+  border:1px solid rgba(34,197,94,.45);
+  background:rgba(34,197,94,.08);
+  color:var(--green);
+  padding:14px;
+  font:bold 13px monospace;
+}
+
+#collectBtn.pulse{
+  animation:pulse 1.3s infinite;
+}
+
+@keyframes pulse{
+  50%{
+    box-shadow:0 0 22px rgba(34,197,94,.22);
+  }
+}
+
+.fbtn,
+.buyBtn,
+.dangerBtn{
+  border:1px solid var(--line);
+  background:#11111b;
+  color:#d1d5db;
+  padding:9px 12px;
+  font:bold 10px monospace;
+}
+
+.fbtn.primary,
+.buyBtn{
+  border-color:rgba(59,130,246,.4);
+  color:var(--blue2);
+  background:rgba(59,130,246,.07);
+}
+
+.fbtn.hot,
+.dangerBtn{
+  border-color:rgba(239,68,68,.4);
+  color:#f87171;
+  background:rgba(239,68,68,.06);
+}
+
+.dangerBtn{
+  width:100%;
+  margin-top:10px;
+  padding:13px;
+}
+
+#speedBtn{
+  position:fixed;
+  right:12px;
+  bottom:72px;
+  z-index:60;
+  border:1px solid #303044;
+  background:#0b0b12;
+  color:#9ca3af;
+  padding:9px 11px;
+  font:bold 10px monospace;
+}
+
+#speedBtn.on{
+  color:var(--orange);
+  border-color:rgba(245,158,11,.5);
+}
+
+/* CAPACITY */
+
+#capBar{
+  height:5px;
+  background:#191923;
+  margin-top:10px;
+  overflow:hidden;
+}
+
+#capFill{
+  height:100%;
+  background:linear-gradient(90deg,var(--blue),var(--violet));
+}
+
+.capLabel{
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font:8px monospace;
+  margin-top:5px;
+}
+
+/* OWNER */
+
+.ownerBanner{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(239,68,68,.3);
+  background:rgba(239,68,68,.05);
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.ownerBanner .t{
+  color:#f87171;
+  font:bold 11px monospace;
+}
+
+.ownerBanner .s{
+  color:var(--muted);
+  font:8px monospace;
+  margin-top:4px;
+}
+
+/* FARMS */
+
+.farmGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.fcard{
+  position:relative;
+  border:1px solid color-mix(in srgb,var(--rc) 35%,#222);
+  background:var(--panel);
+  padding:11px;
+  overflow:hidden;
+}
+
+.fcard.overheat{
+  border-color:rgba(239,68,68,.5);
+}
+
+.flvl{
+  color:var(--rc);
+  font:bold 9px monospace;
+}
+
+.fname{
+  color:#fff;
+  font:bold 11px monospace;
+  margin-top:5px;
+}
+
+.frar{
+  color:var(--rc);
+  font:8px monospace;
+  letter-spacing:1px;
+  margin-top:3px;
+}
+
+.finc{
+  color:var(--blue2);
+  font:bold 12px monospace;
+  margin-top:8px;
+}
+
+.heatBar{
+  height:4px;
+  background:#191923;
+  margin-top:9px;
+}
+
+.heatFill{
+  height:100%;
+  background:var(--orange);
+}
+
+.heatLabel{
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font:7px monospace;
+  margin-top:4px;
+}
+
+.fbtns{
+  display:flex;
+  gap:5px;
+  margin-top:9px;
+}
+
+.fbtns .fbtn{
+  flex:1;
+}
+
+/* SHOP */
+
+.shopStrip{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+
+.scard{
+  background:#090910;
+  padding:10px;
+}
+
+/* MARKET */
+
+.mcard{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:12px;
+  margin-bottom:8px;
+}
+
+.mcard .top,
+.mcard .mid,
+.mcard .bot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.mcard .nm{
+  font:bold 10px monospace;
+}
+
+.st{
+  font:bold 8px monospace;
+}
+
+.online{
+  color:var(--green);
+}
+
+.mcard .mid{
+  color:var(--muted);
+  font:9px monospace;
+  margin-top:10px;
+}
+
+.mcard .mid b{
+  color:#ddd;
+}
+
+.mcard .bot{
+  margin-top:11px;
+}
+
+.pr{
+  color:var(--violet2);
+  font:bold 12px monospace;
+}
+
+/* CHAIN */
+
+.chainNode{
+  border-left:2px solid var(--violet);
+  background:var(--panel);
+  padding:11px;
+  margin-bottom:6px;
+}
+
+.chainNode.l2{
+  margin-left:18px;
+  border-left-color:#475569;
+}
+
+.chainNode .nm{
+  font:bold 11px monospace;
+}
+
+.inf{
+  color:var(--muted);
+  font-size:8px;
+  margin-top:5px;
+}
+
+.inf b{
+  color:var(--green);
+}
+
+.freeNode{
+  border:1px solid rgba(34,197,94,.25);
+  background:rgba(34,197,94,.04);
+  color:var(--green);
+  padding:12px;
+  font:bold 10px monospace;
+  margin-bottom:12px;
+}
+
+.ransomPanel{
+  border:1px solid rgba(239,68,68,.3);
+  background:rgba(239,68,68,.04);
+  padding:13px;
+  margin-bottom:12px;
+}
+
+.cost{
+  color:#f87171;
+  font:bold 18px monospace;
+}
+
+.refBox{
+  display:flex;
+  gap:7px;
+  margin-top:10px;
+}
+
+.refBox .link{
+  min-width:0;
+  flex:1;
+  border:1px solid var(--line);
+  background:#06060b;
+  padding:10px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  color:#7f8799;
+  font:8px monospace;
+}
+
+/* SHIELDS */
+
+.shieldRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  border-top:1px solid var(--line);
+  padding:11px 0;
+}
+
+.shieldRow .nm{
+  font:bold 11px monospace;
+}
+
+.shieldRow .ds{
+  color:var(--muted);
+  font-size:8px;
+  margin-top:3px;
+}
+
+/* STATS */
+
+.statGrid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  border-top:1px solid var(--line);
+  border-left:1px solid var(--line);
+}
+
+.statCell{
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:12px;
+}
+
+.statCell .v{
+  color:#fff;
+  font:bold 16px monospace;
+}
+
+.statCell .l{
+  color:var(--muted);
+  font:8px monospace;
+  margin-top:3px;
+}
+
+/* JOURNAL */
+
+.jitem{
+  display:flex;
+  justify-content:space-between;
+  border-top:1px solid var(--line);
+  padding:8px 0;
+  font-size:9px;
+}
+
+.nt{
+  color:#9ca3af;
+}
+
+.plus{
+  color:var(--green);
+}
+
+.minus{
+  color:var(--red);
+}
+
+/* TOAST */
+
+#toasts{
+  position:fixed;
+  left:12px;
+  right:12px;
+  top:70px;
+  z-index:1000;
+  pointer-events:none;
+}
+
+.toast{
+  max-width:500px;
+  margin:0 auto 7px;
+  border:1px solid #333343;
+  background:#11111a;
+  padding:10px;
+  color:#ddd;
+  font:bold 10px monospace;
+  box-shadow:0 8px 25px rgba(0,0,0,.4);
+}
+
+.toast.good{
+  border-color:rgba(34,197,94,.4);
+  color:var(--green);
+}
+
+.toast.bad{
+  border-color:rgba(239,68,68,.4);
+  color:#f87171;
+}
+
+/* NAV */
+
+.nav{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:55;
+  max-width:700px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  background:rgba(7,7,12,.97);
+  border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+.tab{
+  border:0;
+  background:transparent;
+  color:#626276;
+  padding:11px 4px;
+  font:bold 9px monospace;
+}
+
+.tab.active{
+  color:var(--blue2);
+}
+
+@media(max-width:420px){
+  .farmGrid,
+  .shopStrip{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="boot">
+  <div class="bootBox">
+    <div class="bootTitle">THE CAGE // SYSTEM BOOT</div>
+    <div id="bootText"></div>
+    <div id="bootEnter">[ НАЖМИТЕ ДЛЯ ВХОДА ]</div>
+  </div>
+</div>
+
+<div id="app">
+
+  <header class="header">
+
+    <div class="headerTop">
+
+      <div class="logo">
+        THE <span>CAGE</span>
+      </div>
+
+      <div
+        id="hBalance"
+        class="balance">
+        250 C₵
+      </div>
+
+    </div>
+
+    <div class="headerStats">
+
+      <div class="hstat">
+        ДОХОД:
+        <b id="hIncome">+10/ч</b>
+      </div>
+
+      <div
+        id="hShield"
+        class="hstat">
+        🛡 NOVICE
+      </div>
+
+    </div>
+
+  </header>
+
+  <main>
+
+    <section
+      id="scr-terminal"
+      class="screen active">
+    </section>
+
+    <section
+      id="scr-market"
+      class="screen">
+    </section>
+
+    <section
+      id="scr-chain"
+      class="screen">
+    </section>
+
+    <section
+      id="scr-profile"
+      class="screen">
+    </section>
+
+  </main>
+
+</div>
+
+<div id="toasts"></div>
+
+<button
+  id="speedBtn"
+  onclick="toggleSpeed()">
+  ⚡ ×1
+</button>
+
+<nav class="nav">
+
+  <button
+    class="tab active"
+    data-t="terminal"
+    onclick="go('terminal')">
+    ◈<br>ТЕРМИНАЛ
+  </button>
+
+  <button
+    class="tab"
+    data-t="market"
+    onclick="go('market')">
+    ◇<br>РЫНОК
+  </button>
+
+  <button
+    class="tab"
+    data-t="chain"
+    onclick="go('chain')">
+    ⛓<br>ЦЕПЬ
+  </button>
+
+  <button
+    class="tab"
+    data-t="profile"
+    onclick="go('profile')">
+    ◎<br>ПРОФИЛЬ
+  </button>
+
+</nav>
 
 <script>
 'use strict';
@@ -45,9 +841,13 @@ const SAVE_KEY='thecage_save_v1';
 const SUPABASE_URL='https://onjtrzpcehdjhutxfqby.supabase.co';
 const SUPABASE_KEY='sb_publishable_K705CYyjxaP7bc0F-uL3cg_y6PD5F92';
 
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 const tg=window.Telegram?.WebApp;
+
 tg?.ready();
 tg?.expand();
 
@@ -71,22 +871,17 @@ function playerName(){
 
 /* ================= STATE ================= */
 
-function rnd(a,b){
- return a+Math.random()*(b-a);
-}
-
-function pick(arr){
- return arr[Math.floor(Math.random()*arr.length)];
-}
-
 function genCode(){
  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
  let s='';
- for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];
+ for(let i=0;i<5;i++){
+   s+=c[Math.floor(Math.random()*c.length)];
+ }
  return s;
 }
 
 function defaultState(){
+
  const now=Date.now();
 
  return {
@@ -97,7 +892,12 @@ function defaultState(){
    lastCollect:now,
 
    farms:[
-     {key:'home_server',lvl:1,heat:0,cd:0}
+     {
+       key:'home_server',
+       lvl:1,
+       heat:0,
+       cd:0
+     }
    ],
 
    vassals:[],
@@ -113,7 +913,6 @@ function defaultState(){
    refCount:0,
 
    bots:[],
-
    nextRaid:now+26*H,
    lastMarket:now,
 
@@ -133,335 +932,148 @@ function defaultState(){
 let S=load();
 
 function load(){
+
  try{
-   const raw=localStorage.getItem(SAVE_KEY);
+
+   const raw=
+     localStorage.getItem(SAVE_KEY);
 
    if(raw){
+
      const s=JSON.parse(raw);
+
+     const d=defaultState();
 
      s.lastReal=Date.now();
 
-     if(!s.refCode)s.refCode=genCode();
-     if(!s.vassals)s.vassals=[];
-     if(!s.stats)s.stats={collected:0,taxesEarned:0,taxesPaid:0,purch:0,ransoms:0,raids:0};
-     if(!s.journal)s.journal=[];
-     if(!s.farms)s.farms=[];
+     if(!s.refCode)
+       s.refCode=d.refCode;
+
+     if(!Array.isArray(s.vassals))
+       s.vassals=[];
+
+     if(!Array.isArray(s.farms))
+       s.farms=d.farms;
+
+     if(!Array.isArray(s.journal))
+       s.journal=[];
+
+     if(!Array.isArray(s.bots))
+       s.bots=[];
+
+     if(!s.stats)
+       s.stats=d.stats;
+
+     if(typeof s.speed!=='number')
+       s.speed=1;
+
+     if(typeof s.balance!=='number')
+       s.balance=250;
+
+     if(typeof s.lastCollect!=='number')
+       s.lastCollect=Date.now();
+
+     if(typeof s.shieldUntil!=='number')
+       s.shieldUntil=Date.now()+24*H;
+
+     if(typeof s.shieldCd!=='number')
+       s.shieldCd=0;
+
+     if(typeof s.allCd!=='number')
+       s.allCd=0;
+
+     if(typeof s.immunity!=='number')
+       s.immunity=0;
+
+     if(typeof s.nextRaid!=='number')
+       s.nextRaid=Date.now()+26*H;
 
      return s;
    }
+
  }catch(e){
-   console.error(e);
+
+   console.error(
+     'LOAD ERROR',
+     e
+   );
+
  }
 
  return defaultState();
 }
 
 function save(){
+
  S.savedReal=Date.now();
 
  try{
+
    localStorage.setItem(
      SAVE_KEY,
      JSON.stringify(S)
    );
+
  }catch(e){}
-}
-
-/* ================= SUPABASE ================= */
-
-async function syncPlayer(){
-
- const id=playerId();
-
- if(!id){
-   console.log('Telegram user не найден');
-   return null;
- }
-
- const username=playerName();
-
- const {data,error}=await sb
-   .from('players')
-   .upsert({
-     id:id,
-     username:username,
-     ref_code:S.refCode,
-     coins:Math.floor(S.balance),
-     income:Math.floor(totalIncome()),
-     market_value:Math.floor(myValue())
-   },{
-     onConflict:'id'
-   })
-   .select()
-   .single();
-
- if(error){
-   console.error('Supabase sync error:',error);
-   return null;
- }
-
- return data;
-}
-
-/* ================= REFERRAL ================= */
-
-async function processReferral(){
-
- const id=playerId();
-
- if(!id)return;
-
- const startParam=tg?.initDataUnsafe?.start_param;
-
- if(!startParam)return;
-
- if(!startParam.startsWith('ref_'))return;
-
- const code=startParam.substring(4).trim();
-
- if(!code)return;
-
- try{
-
-   const {data:me,error:meError}=await sb
-     .from('players')
-     .select('id,vassal_of')
-     .eq('id',id)
-     .maybeSingle();
-
-   if(meError){
-     console.error(meError);
-     return;
-   }
-
-   if(me?.vassal_of)return;
-
-   const {data:owner,error:ownerError}=await sb
-     .from('players')
-     .select('id,username')
-     .eq('ref_code',code)
-     .maybeSingle();
-
-   if(ownerError){
-     console.error(ownerError);
-     return;
-   }
-
-   if(!owner){
-     console.log('Владелец реферального кода не найден');
-     return;
-   }
-
-   if(String(owner.id)===String(id)){
-     console.log('Самореферал запрещён');
-     return;
-   }
-
-   const {error:updateError}=await sb
-     .from('players')
-     .update({
-       vassal_of:String(owner.id)
-     })
-     .eq('id',id)
-     .is('vassal_of',null);
-
-   if(updateError){
-     console.error('Referral update error:',updateError);
-     return;
-   }
-
-   S.owner={
-     name:owner.username || 'Игрок',
-     id:String(owner.id),
-     price:myValue(),
-     since:S.v
-   };
-
-   S.refCount=0;
-
-   log(
-     'REF_JOIN',
-     0,
-     'вассал @'+(owner.username || 'Игрок')
-   );
-
-   save();
-
-   toast(
-     '⛓ ТЫ СТАЛ ВАССАЛОМ @'+(owner.username || 'Игрок'),
-     'good'
-   );
-
-   render();
-
- }catch(e){
-   console.error('Referral error:',e);
- }
-}
-
-/* ================= DATABASE DATA ================= */
-
-async function loadRealMarket(){
-
- const id=playerId();
-
- if(!id)return;
-
- const {data,error}=await sb
-   .from('players')
-   .select('id,username,coins,income,market_value,vassal_of,created_at')
-   .is('vassal_of',null)
-   .neq('id',id)
-   .order('income',{
-     ascending:false
-   })
-   .limit(20);
-
- if(error){
-   console.error('Market error:',error);
-   return;
- }
-
- S.bots=(data||[]).map(p=>({
-
-   id:String(p.id),
-   name:p.username || 'Игрок',
-   income:Number(p.income||10),
-   market_value:Number(
-     p.market_value ||
-     Math.max(240,Number(p.income||10)*24)
-   ),
-   shielded:false,
-   shieldUntil:0,
-   degraded:false,
-   subs:[]
- }));
-
- renderMarket();
-}
-
-/* ================= ECONOMY ================= */
-
-function card(key){
- return CARDS.find(c=>c.key===key);
-}
-
-function farmIncome(f){
-
- const c=card(f.key);
-
- return c.income*
-   (1+0.35*(f.lvl-1))*
-   (f.heat>=100?0.3:1);
-}
-
-function synergyMult(){
-
- const cnt={};
-
- S.farms.forEach(f=>{
-   const c=card(f.key);
-
-   if(!c)return;
-
-   cnt[c.rarity]=(cnt[c.rarity]||0)+1;
- });
-
- const n=Math.max(
-   0,
-   ...Object.values(cnt)
- );
-
- return 1+0.05*Math.min(
-   Math.max(n-1,0),
-   4
- );
-}
-
-function personalIncome(){
-
- return S.farms.reduce(
-   (a,f)=>a+farmIncome(f),
-   0
- )*synergyMult();
-}
-
-function taxOf(node,lvl){
-
- let t=node.income*
-   Math.pow(0.25,lvl);
-
- (node.subs||[]).forEach(
-   s=>t+=taxOf(s,lvl+1)
- );
-
- return t;
-}
-
-function taxIncome(){
-
- return S.vassals.reduce(
-   (a,v)=>a+taxOf(v,1),
-   0
- );
-}
-
-function totalIncome(){
-
- return personalIncome()+taxIncome();
-}
-
-function upgradeCost(f){
-
- return Math.round(
-   card(f.key).price*
-   0.5*
-   Math.pow(1.7,f.lvl-1)
- );
-}
-
-function botPrice(b){
-
- return Math.round(
-   (b.market_value || b.income*24)
- );
-}
-
-function ransomCost(){
-
- if(!S.owner)return 0;
-
- const hrs=(S.v-S.owner.since)/H;
-
- return Math.round(
-   S.owner.price*
-   1.5*
-   (1+0.02*hrs)
- );
-}
-
-function myValue(){
-
- return Math.round(
-   personalIncome()*24
- );
-}
-
-function pendingCollect(){
-
- const elapsed=Math.min(
-   S.v-S.lastCollect,
-   12*H
- );
-
- return totalIncome()/H*elapsed;
 }
 
 /* ================= HELPERS ================= */
 
+function rnd(a,b){
+ return a+Math.random()*(b-a);
+}
+
+function pick(arr){
+ return arr[
+   Math.floor(
+     Math.random()*arr.length
+   )
+ ];
+}
+
+function log(type,amount,note){
+
+ if(!Array.isArray(S.journal))
+   S.journal=[];
+
+ S.journal.unshift({
+   type,
+   amount,
+   note,
+   time:Date.now()
+ });
+
+ if(S.journal.length>30)
+   S.journal.length=30;
+}
+
+function toast(msg,kind){
+
+ const box=
+   document.getElementById('toasts');
+
+ if(!box)return;
+
+ const d=
+   document.createElement('div');
+
+ d.className=
+   'toast'+
+   (kind?' '+kind:'');
+
+ d.textContent=msg;
+
+ box.appendChild(d);
+
+ setTimeout(
+   ()=>d.remove(),
+   3200
+ );
+}
+
 function fmt(n){
 
- n=Math.floor(n);
+ n=Math.floor(Number(n)||0);
 
  if(n>=1e9)
    return (n/1e9).toFixed(2)+'B';
@@ -477,16 +1089,18 @@ function fmt(n){
 
 function fmtT(ms){
 
- if(ms<=0)return '00:00:00';
+ if(ms<=0)
+   return '00:00:00';
 
- const s=Math.floor(ms/1000);
+ const s=
+   Math.floor(ms/1000);
 
  const h=String(
    Math.floor(s/3600)
  ).padStart(2,'0');
 
  const m=String(
-   Math.floor(s%3600/60)
+   Math.floor((s%3600)/60)
  ).padStart(2,'0');
 
  const ss=String(
@@ -496,25 +1110,6 @@ function fmtT(ms){
  return h+':'+m+':'+ss;
 }
 
-function toast(msg,kind){
-
- const d=document.createElement('div');
-
- d.className='toast'+
-   (kind?' '+kind:'');
-
- d.textContent=msg;
-
- document
-   .getElementById('toasts')
-   .appendChild(d);
-
- setTimeout(
-   ()=>d.remove(),
-   3200
- );
-}
-
 let AC=null;
 
 function beep(f){
@@ -522,16 +1117,21 @@ function beep(f){
  try{
 
    AC=AC||
-     new(window.AudioContext||
-     window.webkitAudioContext)();
+     new(
+       window.AudioContext||
+       window.webkitAudioContext
+     )();
 
-   const o=AC.createOscillator();
-   const g=AC.createGain();
+   const o=
+     AC.createOscillator();
+
+   const g=
+     AC.createGain();
 
    o.frequency.value=f||660;
    o.type='square';
 
-   g.gain.value=0.03;
+   g.gain.value=.03;
 
    o.connect(g);
    g.connect(AC.destination);
@@ -539,15 +1139,543 @@ function beep(f){
    o.start();
 
    g.gain.exponentialRampToValueAtTime(
-     0.0001,
-     AC.currentTime+0.08
+     .0001,
+     AC.currentTime+.08
    );
 
    o.stop(
-     AC.currentTime+0.09
+     AC.currentTime+.09
    );
 
  }catch(e){}
+}
+
+/* ================= ECONOMY ================= */
+
+function card(key){
+ return CARDS.find(
+   c=>c.key===key
+ );
+}
+
+function farmIncome(f){
+
+ const c=card(f.key);
+
+ if(!c)return 0;
+
+ return c.income*
+   (1+.35*(f.lvl-1))*
+   (f.heat>=100?.3:1);
+}
+
+function synergyMult(){
+
+ const cnt={};
+
+ S.farms.forEach(f=>{
+
+   const c=card(f.key);
+
+   if(!c)return;
+
+   cnt[c.rarity]=
+     (cnt[c.rarity]||0)+1;
+ });
+
+ const n=Math.max(
+   0,
+   ...Object.values(cnt)
+ );
+
+ return 1+
+   .05*
+   Math.min(
+     Math.max(n-1,0),
+     4
+   );
+}
+
+function personalIncome(){
+
+ return S.farms.reduce(
+   (a,f)=>a+farmIncome(f),
+   0
+ )*synergyMult();
+}
+
+function taxOf(node,lvl){
+
+ let t=
+   Number(node.income||0)*
+   Math.pow(.25,lvl);
+
+ (node.subs||[]).forEach(
+   s=>{
+     t+=taxOf(s,lvl+1);
+   }
+ );
+
+ return t;
+}
+
+function taxIncome(){
+
+ return S.vassals.reduce(
+   (a,v)=>a+taxOf(v,1),
+   0
+ );
+}
+
+function totalIncome(){
+
+ return personalIncome()+
+   taxIncome();
+}
+
+function upgradeCost(f){
+
+ const c=card(f.key);
+
+ if(!c)return 0;
+
+ return Math.round(
+   c.price*
+   .5*
+   Math.pow(1.7,f.lvl-1)
+ );
+}
+
+function botPrice(b){
+
+ return Math.round(
+   b.market_value||
+   b.income*24||
+   240
+ );
+}
+
+function ransomCost(){
+
+ if(!S.owner)
+   return 0;
+
+ const hrs=
+   (S.v-S.owner.since)/H;
+
+ return Math.round(
+   S.owner.price*
+   1.5*
+   (1+.02*hrs)
+ );
+}
+
+function myValue(){
+
+ return Math.round(
+   personalIncome()*24
+ );
+}
+
+function pendingCollect(){
+
+ const elapsed=
+   Math.min(
+     Math.max(
+       S.v-S.lastCollect,
+       0
+     ),
+     12*H
+   );
+
+ return totalIncome()/H*elapsed;
+}
+
+/* ================= SUPABASE ================= */
+
+async function syncPlayer(){
+
+ const id=playerId();
+
+ if(!id){
+   return null;
+ }
+
+ try{
+
+   const {data,error}=
+     await sb
+       .from('players')
+       .upsert({
+         id:id,
+         username:playerName(),
+         ref_code:S.refCode,
+         coins:Math.floor(S.balance),
+         income:Math.floor(totalIncome()),
+         market_value:Math.floor(myValue())
+       },{
+         onConflict:'id'
+       })
+       .select()
+       .single();
+
+   if(error){
+
+     console.error(
+       'Supabase sync error:',
+       error
+     );
+
+     return null;
+   }
+
+   return data;
+
+ }catch(e){
+
+   console.error(
+     'Supabase sync exception:',
+     e
+   );
+
+   return null;
+ }
+}
+
+/* ================= LOAD PLAYER RELATIONS ================= */
+
+async function loadMyRelations(){
+
+ const id=playerId();
+
+ if(!id)return;
+
+ try{
+
+   const {data:me,error:meError}=
+     await sb
+       .from('players')
+       .select(
+         'id,username,vassal_of,created_at'
+       )
+       .eq('id',id)
+       .maybeSingle();
+
+   if(meError){
+     console.error(meError);
+     return;
+   }
+
+   if(!me)return;
+
+   /* OWNER */
+
+   if(me.vassal_of){
+
+     const {data:owner}=
+       await sb
+         .from('players')
+         .select(
+           'id,username,income,market_value,created_at'
+         )
+         .eq(
+           'id',
+           String(me.vassal_of)
+         )
+         .maybeSingle();
+
+     if(owner){
+
+       if(
+         !S.owner||
+         String(S.owner.id)!==
+         String(owner.id)
+       ){
+
+         S.owner={
+           id:String(owner.id),
+           name:owner.username||'Игрок',
+           price:Number(
+             owner.market_value||
+             owner.income*24||
+             240
+           ),
+           since:
+             S.owner?.since||
+             Date.now()
+         };
+       }
+
+     }
+
+   }else{
+
+     S.owner=null;
+   }
+
+   /* VASSALS */
+
+   const {data:vassals,error:vError}=
+     await sb
+       .from('players')
+       .select(
+         'id,username,income,market_value,vassal_of,created_at'
+       )
+       .eq(
+         'vassal_of',
+         id
+       )
+       .limit(100);
+
+   if(vError){
+
+     console.error(vError);
+
+   }else{
+
+     S.vassals=
+       (vassals||[]).map(p=>({
+         id:String(p.id),
+         name:p.username||'Игрок',
+         income:Number(p.income||10),
+         lvl:1,
+         subs:[]
+       }));
+
+   }
+
+   save();
+
+ }catch(e){
+
+   console.error(
+     'Relations error:',
+     e
+   );
+ }
+}
+
+/* ================= REFERRAL ================= */
+
+async function processReferral(){
+
+ const id=playerId();
+
+ if(!id)return;
+
+ const startParam=
+   tg?.initDataUnsafe?.start_param;
+
+ if(!startParam)return;
+
+ if(
+   !String(startParam)
+     .startsWith('ref_')
+ )return;
+
+ const code=
+   String(startParam)
+     .substring(4)
+     .trim();
+
+ if(!code)return;
+
+ try{
+
+   const {data:me}=
+     await sb
+       .from('players')
+       .select(
+         'id,vassal_of'
+       )
+       .eq('id',id)
+       .maybeSingle();
+
+   if(me?.vassal_of)
+     return;
+
+   const {data:owner,error}=
+     await sb
+       .from('players')
+       .select(
+         'id,username,market_value,income'
+       )
+       .eq(
+         'ref_code',
+         code
+       )
+       .maybeSingle();
+
+   if(error){
+
+     console.error(
+       'Referral owner error:',
+       error
+     );
+
+     return;
+   }
+
+   if(!owner){
+     console.log(
+       'Referral code not found'
+     );
+     return;
+   }
+
+   if(
+     String(owner.id)===
+     String(id)
+   ){
+     return;
+   }
+
+   const {error:updateError}=
+     await sb
+       .from('players')
+       .update({
+         vassal_of:
+           String(owner.id)
+       })
+       .eq('id',id)
+       .is(
+         'vassal_of',
+         null
+       );
+
+   if(updateError){
+
+     console.error(
+       'Referral update error:',
+       updateError
+     );
+
+     return;
+   }
+
+   S.owner={
+     id:String(owner.id),
+     name:
+       owner.username||
+       'Игрок',
+     price:Number(
+       owner.market_value||
+       owner.income*24||
+       240
+     ),
+     since:S.v
+   };
+
+   log(
+     'REF_JOIN',
+     0,
+     'вассал @'+
+     (
+       owner.username||
+       'Игрок'
+     )
+   );
+
+   toast(
+     '⛓ ТЫ СТАЛ ВАССАЛОМ @'+
+     (
+       owner.username||
+       'Игрок'
+     ),
+     'good'
+   );
+
+   save();
+
+ }catch(e){
+
+   console.error(
+     'Referral error:',
+     e
+   );
+ }
+}
+
+/* ================= MARKET ================= */
+
+async function loadRealMarket(){
+
+ const id=playerId();
+
+ if(!id)return;
+
+ try{
+
+   const {data,error}=
+     await sb
+       .from('players')
+       .select(
+         'id,username,coins,income,market_value,vassal_of,created_at'
+       )
+       .is(
+         'vassal_of',
+         null
+       )
+       .neq(
+         'id',
+         id
+       )
+       .order(
+         'income',
+         {ascending:false}
+       )
+       .limit(30);
+
+   if(error){
+
+     console.error(
+       'Market error:',
+       error
+     );
+
+     return;
+   }
+
+   S.bots=
+     (data||[]).map(p=>({
+
+       id:String(p.id),
+
+       name:
+         p.username||
+         'Игрок',
+
+       income:
+         Number(p.income||10),
+
+       market_value:
+         Number(
+           p.market_value||
+           Math.max(
+             240,
+             Number(p.income||10)*24
+           )
+         ),
+
+       shielded:false,
+       shieldUntil:0,
+       degraded:false,
+       subs:[]
+     }));
+
+   S.lastMarket=S.v;
+
+   save();
+
+   renderMarket();
+
+ }catch(e){
+
+   console.error(
+     'Market exception:',
+     e
+   );
+ }
 }
 
 /* ================= ACTIONS ================= */
@@ -558,35 +1686,58 @@ function collect(){
 
  if(p<1)return;
 
- const elapsed=Math.min(
-   S.v-S.lastCollect,
-   12*H
- );
+ const elapsed=
+   Math.min(
+     Math.max(
+       S.v-S.lastCollect,
+       0
+     ),
+     12*H
+   );
 
- const personal=personalIncome();
- const tax=taxIncome();
+ const personal=
+   personalIncome();
+
+ const tax=
+   taxIncome();
 
  const gross=
-   (personal+tax)/H*
+   (personal+tax)/
+   H*
    elapsed;
 
  let taxPay=0;
 
- if(S.owner){
+ if(S.owner&&totalIncome()>0){
+
    taxPay=
      gross*
-     (personal/totalIncome())*
-     0.25;
+     (
+       personal/
+       totalIncome()
+     )*
+     .25;
  }
 
- const net=gross-taxPay;
+ const net=
+   Math.max(
+     0,
+     gross-taxPay
+   );
 
  S.balance+=net;
 
  S.stats.collected+=net;
 
- S.stats.taxesEarned+=
-   gross*(tax/totalIncome());
+ if(totalIncome()>0){
+
+   S.stats.taxesEarned+=
+     gross*
+     (
+       tax/
+       totalIncome()
+     );
+ }
 
  S.stats.taxesPaid+=taxPay;
 
@@ -596,12 +1747,15 @@ function collect(){
    'COLLECT',
    net,
    S.owner?
-   ('налог хозяину −'+fmt(taxPay)):
+   'налог хозяину −'+
+   fmt(taxPay):
    ''
  );
 
  toast(
-   '+'+fmt(net)+' C₵ СОБРАНО',
+   '+'+
+   fmt(net)+
+   ' C₵ СОБРАНО',
    'good'
  );
 
@@ -618,8 +1772,15 @@ function buyCard(key){
 
  const c=card(key);
 
+ if(!c)return;
+
  if(S.balance<c.price){
-   toast('НЕДОСТАТОЧНО C₵','bad');
+
+   toast(
+     'НЕДОСТАТОЧНО C₵',
+     'bad'
+   );
+
    return;
  }
 
@@ -639,7 +1800,8 @@ function buyCard(key){
  );
 
  toast(
-   'NODE INSTALLED: '+c.name,
+   'NODE INSTALLED: '+
+   c.name,
    'good'
  );
 
@@ -656,10 +1818,28 @@ function upgradeFarm(i){
 
  const f=S.farms[i];
 
- const cost=upgradeCost(f);
+ if(!f)return;
+
+ if(f.lvl>=10){
+
+   toast(
+     'МАКСИМАЛЬНЫЙ УРОВЕНЬ',
+     'bad'
+   );
+
+   return;
+ }
+
+ const cost=
+   upgradeCost(f);
 
  if(S.balance<cost){
-   toast('НЕДОСТАТОЧНО C₵','bad');
+
+   toast(
+     'НЕДОСТАТОЧНО C₵',
+     'bad'
+   );
+
    return;
  }
 
@@ -671,13 +1851,15 @@ function upgradeFarm(i){
    'UPGRADE',
    -cost,
    card(f.key).name+
-   ' → LVL '+f.lvl
+   ' → LVL '+
+   f.lvl
  );
 
  toast(
    'УЛУЧШЕНО: '+
    card(f.key).name+
-   ' LVL '+f.lvl,
+   ' LVL '+
+   f.lvl,
    'good'
  );
 
@@ -693,6 +1875,8 @@ function upgradeFarm(i){
 function resetHeat(i){
 
  const f=S.farms[i];
+
+ if(!f)return;
 
  if(
    S.v<f.cd||
@@ -745,74 +1929,148 @@ function resetAllHeat(){
  render();
 }
 
-/* ================= REAL PLAYER PURCHASE ================= */
+/* ================= PLAYER PURCHASE ================= */
 
 async function buyBot(id){
 
  const myId=playerId();
 
  if(!myId){
-   toast('ОТКРОЙ ИГРУ В TELEGRAM','bad');
+
+   toast(
+     'ОТКРОЙ ИГРУ В TELEGRAM',
+     'bad'
+   );
+
    return;
  }
 
- const b=S.bots.find(
-   x=>String(x.id)===String(id)
- );
+ const b=
+   S.bots.find(
+     x=>String(x.id)===
+     String(id)
+   );
 
  if(!b)return;
 
- const price=botPrice(b);
+ const price=
+   botPrice(b);
 
  if(S.balance<price){
-   toast('НЕДОСТАТОЧНО C₵','bad');
+
+   toast(
+     'НЕДОСТАТОЧНО C₵',
+     'bad'
+   );
+
    return;
  }
 
- if(String(id)===String(myId)){
-   toast('НЕЛЬЗЯ КУПИТЬ СЕБЯ','bad');
+ if(
+   String(id)===
+   String(myId)
+ ){
+
+   toast(
+     'НЕЛЬЗЯ КУПИТЬ СЕБЯ',
+     'bad'
+   );
+
    return;
  }
 
  try{
 
-   const {data:target,error:targetError}=
+   const {data:target,error}=
      await sb
        .from('players')
-       .select('id,username,income,market_value,vassal_of')
-       .eq('id',String(id))
+       .select(
+         'id,username,income,market_value,vassal_of'
+       )
+       .eq(
+         'id',
+         String(id)
+       )
        .maybeSingle();
 
-   if(targetError){
-     console.error(targetError);
-     toast('ОШИБКА СЕРВЕРА','bad');
+   if(error){
+
+     console.error(error);
+
+     toast(
+       'ОШИБКА СЕРВЕРА',
+       'bad'
+     );
+
      return;
    }
 
    if(!target){
-     toast('ИГРОК НЕ НАЙДЕН','bad');
+
+     toast(
+       'ИГРОК НЕ НАЙДЕН',
+       'bad'
+     );
+
      await loadRealMarket();
+
      return;
    }
 
    if(target.vassal_of){
-     toast('ЭТОТ ИГРОК УЖЕ В ЦЕПИ','bad');
+
+     toast(
+       'ЭТОТ ИГРОК УЖЕ В ЦЕПИ',
+       'bad'
+     );
+
      await loadRealMarket();
+
      return;
    }
 
-   const {error:updateError}=
+   const {data:updateData,error:updateError}=
      await sb
        .from('players')
        .update({
          vassal_of:myId
        })
-       .eq('id',String(id))
-       .is('vassal_of',null);
+       .eq(
+         'id',
+         String(id)
+       )
+       .is(
+         'vassal_of',
+         null
+       )
+       .select();
 
    if(updateError){
-     console.error(updateError);
-     toast('НЕ УДАЛОСЬ КУПИТЬ ИГРОКА','bad');
+
+     console.error(
+       updateError
+     );
+
+     toast(
+       'НЕ УДАЛОСЬ КУПИТЬ ИГРОКА',
+       'bad'
+     );
+
+     return;
+   }
+
+   if(
+     !updateData||
+     !updateData.length
+   ){
+
+     toast(
+       'ИГРОК УЖЕ БЫЛ КУПЛЕН',
+       'bad'
+     );
+
+     await loadRealMarket();
+
      return;
    }
 
@@ -820,8 +2078,11 @@ async function buyBot(id){
 
    S.vassals.push({
      id:String(target.id),
-     name:target.username||'Игрок',
-     income:Number(target.income||10),
+     name:
+       target.username||
+       'Игрок',
+     income:
+       Number(target.income||10),
      lvl:1,
      subs:[]
    });
@@ -831,12 +2092,19 @@ async function buyBot(id){
    log(
      'PLAYER_BUY',
      -price,
-     '@'+(target.username||'Игрок')
+     '@'+
+     (
+       target.username||
+       'Игрок'
+     )
    );
 
    toast(
      'NODE ACQUIRED: @'+
-     (target.username||'Игрок'),
+     (
+       target.username||
+       'Игрок'
+     ),
      'good'
    );
 
@@ -863,11 +2131,12 @@ async function buyBot(id){
 
 /* ================= RANSOM ================= */
 
-function ransom(){
+async function ransom(){
 
  if(!S.owner)return;
 
- const cost=ransomCost();
+ const cost=
+   ransomCost();
 
  if(S.balance<cost){
 
@@ -881,6 +2150,34 @@ function ransom(){
    return;
  }
 
+ const id=playerId();
+
+ if(id){
+
+   const {error}=
+     await sb
+       .from('players')
+       .update({
+         vassal_of:null
+       })
+       .eq(
+         'id',
+         id
+       );
+
+   if(error){
+
+     console.error(error);
+
+     toast(
+       'ОШИБКА СЕРВЕРА',
+       'bad'
+     );
+
+     return;
+   }
+ }
+
  S.balance-=cost;
 
  log(
@@ -889,18 +2186,6 @@ function ransom(){
    'освобождение от @'+
    S.owner.name
  );
-
- const id=playerId();
-
- if(id){
-
-   sb
-     .from('players')
-     .update({
-       vassal_of:null
-     })
-     .eq('id',id);
- }
 
  S.owner=null;
 
@@ -928,12 +2213,16 @@ function ransom(){
  render();
 }
 
-/* ================= SHIELD ================= */
+/* ================= SHIELDS ================= */
 
 function buyShield(t){
 
  const sh=
-   SHIELDS.find(x=>x.key===t);
+   SHIELDS.find(
+     x=>x.key===t
+   );
+
+ if(!sh)return;
 
  if(S.v<S.shieldCd){
 
@@ -982,7 +2271,8 @@ function buyShield(t){
  );
 
  toast(
-   'SHIELD ACTIVE: '+sh.label,
+   'SHIELD ACTIVE: '+
+   sh.label,
    'good'
  );
 
@@ -995,15 +2285,7 @@ function buyShield(t){
  render();
 }
 
-/* ================= REFERRAL UI ================= */
-
-function simInvite(){
-
- toast(
-   'SIM ОТКЛЮЧЁН — ПРИГЛАШАЙ РЕАЛЬНЫХ ИГРОКОВ',
-   'bad'
- );
-}
+/* ================= REFERRALS ================= */
 
 function copyRef(){
 
@@ -1011,20 +2293,35 @@ function copyRef(){
    'https://t.me/TheCageGameBot?start=ref_'+
    S.refCode;
 
- if(navigator.clipboard){
+ if(
+   navigator.clipboard&&
+   navigator.clipboard.writeText
+ ){
 
    navigator.clipboard
      .writeText(link)
-     .then(()=>{
-       toast(
-         'ССЫЛКА СКОПИРОВАНА',
-         'good'
-       );
-     });
+     .then(
+       ()=>{
+         toast(
+           'ССЫЛКА СКОПИРОВАНА',
+           'good'
+         );
+       }
+     )
+     .catch(
+       ()=>{
+         toast(
+           link,
+           'good'
+         );
+       }
+     );
 
  }else{
 
-   toast('СКОПИРУЙ ССЫЛКУ ВРУЧНУЮ');
+   toast(
+     'СКОПИРУЙ ССЫЛКУ ВРУЧНУЮ'
+   );
  }
 }
 
@@ -1042,7 +2339,20 @@ function shareRef(){
      'Зайди в мою цепь. THE CAGE.'
    );
 
- window.open(url,'_blank');
+ if(
+   tg&&
+   typeof tg.openTelegramLink==='function'
+ ){
+
+   tg.openTelegramLink(url);
+
+ }else{
+
+   window.open(
+     url,
+     '_blank'
+   );
+ }
 }
 
 /* ================= SPEED ================= */
@@ -1054,20 +2364,23 @@ function toggleSpeed(){
    60:
    1;
 
- document
-   .getElementById('speedBtn')
-   .textContent=
-   S.speed===1?
-   '⚡ ×1':
-   '⚡ ×60';
+ const btn=
+   document.getElementById(
+     'speedBtn'
+   );
 
- document
-   .getElementById('speedBtn')
-   .classList
-   .toggle(
+ if(btn){
+
+   btn.textContent=
+     S.speed===1?
+     '⚡ ×1':
+     '⚡ ×60';
+
+   btn.classList.toggle(
      'on',
      S.speed===60
    );
+ }
 
  toast(
    S.speed===60?
@@ -1095,7 +2408,10 @@ async function resetGame(){
        .update({
          vassal_of:null
        })
-       .eq('vassal_of',id);
+       .eq(
+         'vassal_of',
+         id
+       );
 
      await sb
        .from('players')
@@ -1106,13 +2422,16 @@ async function resetGame(){
          vassal_of:null,
          ref_code:genCode()
        })
-       .eq('id',id);
+       .eq(
+         'id',
+         id
+       );
    }
 
  }catch(e){
 
    console.error(
-     'Reset Supabase error:',
+     'Reset error:',
      e
    );
  }
@@ -1129,6 +2448,7 @@ async function resetGame(){
 function doRaid(){
 
  S.owner={
+   id:null,
    name:pick(LORDS),
    price:myValue(),
    since:S.v
@@ -1143,7 +2463,8 @@ function doRaid(){
  log(
    'CAPTURED',
    0,
-   '@'+S.owner.name+
+   '@'+
+   S.owner.name+
    ' купил тебя'
  );
 
@@ -1163,35 +2484,38 @@ async function tick(){
 
  const now=Date.now();
 
- const dt=
-   now-
-   S.lastReal;
+ let dt=
+   now-S.lastReal;
+
+ if(dt<0||dt>60000)
+   dt=1000;
 
  S.lastReal=now;
 
  S.v+=
-   dt*
-   S.speed;
+   dt*S.speed;
 
- S.farms.forEach(f=>{
+ S.farms.forEach(
+   f=>{
 
-   if(f.heat<100){
+     if(f.heat<100){
 
-     f.heat=
-       Math.min(
-         100,
-         f.heat+
-         dt*
-         S.speed*
-         100/
-         86400000
-       );
+       f.heat=
+         Math.min(
+           100,
+           f.heat+
+           dt*
+           S.speed*
+           100/
+           86400000
+         );
+     }
+
    }
- });
+ );
 
  if(
-   S.v-
-   S.lastMarket>
+   S.v-S.lastMarket>
    30000
  ){
 
@@ -1201,7 +2525,7 @@ async function tick(){
  }
 
  const unprotected=
-   S.v>S.shieldUntil &&
+   S.v>S.shieldUntil&&
    S.v>S.immunity;
 
  if(
@@ -1210,7 +2534,7 @@ async function tick(){
    personalIncome()>=30
  ){
 
-   if(Math.random()<0.5){
+   if(Math.random()<.5){
 
      doRaid();
 
@@ -1218,12 +2542,14 @@ async function tick(){
 
      S.nextRaid=
        S.v+
-       1*H;
+       H;
    }
  }
 
  render();
 }
+
+/* ================= DATABASE START ================= */
 
 async function startDatabase(){
 
@@ -1233,7 +2559,11 @@ async function startDatabase(){
 
    await processReferral();
 
+   await loadMyRelations();
+
    await loadRealMarket();
+
+   render();
 
  }catch(e){
 
@@ -1243,6 +2573,1183 @@ async function startDatabase(){
    );
  }
 }
+
+/* ================= NAVIGATION ================= */
+
+function go(t){
+
+ document
+   .querySelectorAll('.screen')
+   .forEach(
+     s=>
+       s.classList.remove('active')
+   );
+
+ const screen=
+   document.getElementById(
+     'scr-'+t
+   );
+
+ if(screen)
+   screen.classList.add('active');
+
+ document
+   .querySelectorAll('.tab')
+   .forEach(
+     x=>
+       x.classList.toggle(
+         'active',
+         x.dataset.t===t
+       )
+   );
+
+ render();
+}
+
+/* ================= RENDER ================= */
+
+function render(){
+
+ renderHeader();
+ renderTerminal();
+ renderMarket();
+ renderChain();
+ renderProfile();
+
+ const speedBtn=
+   document.getElementById(
+     'speedBtn'
+   );
+
+ if(speedBtn){
+
+   speedBtn.textContent=
+     S.speed===1?
+     '⚡ ×1':
+     '⚡ ×60';
+
+   speedBtn.classList.toggle(
+     'on',
+     S.speed===60
+   );
+ }
+}
+
+function renderHeader(){
+
+ const balance=
+   document.getElementById(
+     'hBalance'
+   );
+
+ const income=
+   document.getElementById(
+     'hIncome'
+   );
+
+ const shield=
+   document.getElementById(
+     'hShield'
+   );
+
+ if(balance)
+   balance.textContent=
+     fmt(S.balance)+' C₵';
+
+ if(income)
+   income.textContent=
+     '+'+
+     fmt(totalIncome())+
+     '/ч';
+
+ if(!shield)return;
+
+ if(S.v<S.shieldUntil){
+
+   shield.className='hstat';
+
+   shield.textContent=
+     '🛡 '+
+     S.shieldTier+
+     ' '+
+     fmtT(
+       S.shieldUntil-S.v
+     );
+
+ }else{
+
+   shield.className=
+     'hstat none';
+
+   shield.textContent=
+     'БЕЗ ЗАЩИТЫ';
+ }
+}
+
+/* ================= FARM ================= */
+
+function farmCardHTML(f,i){
+
+ const c=card(f.key);
+
+ if(!c)return '';
+
+ const r=
+   RARITY[c.rarity];
+
+ const oh=
+   f.heat>=100;
+
+ return `
+ <div
+   class="fcard ${oh?'overheat':''}"
+   style="--rc:${r.color}">
+
+   <div class="flvl">
+     LVL ${f.lvl}
+   </div>
+
+   <div class="fname">
+     ${c.name}
+   </div>
+
+   <div class="frar">
+     ${r.label}
+   </div>
+
+   <div class="finc">
+     +${fmt(
+       farmIncome(f)*
+       synergyMult()
+     )}/ч
+
+     ${
+       oh?
+       '<span style="color:var(--red);font-size:9px"> OVERHEAT</span>':
+       ''
+     }
+   </div>
+
+   <div class="heatBar">
+     <div
+       class="heatFill"
+       style="width:${f.heat}%">
+     </div>
+   </div>
+
+   <div class="heatLabel">
+     <span>HEAT</span>
+     <span>${Math.floor(f.heat)}%</span>
+   </div>
+
+   <div class="fbtns">
+
+     ${
+       f.lvl<10?
+
+       `
+       <button
+         class="fbtn primary"
+         onclick="upgradeFarm(${i})">
+
+         АПГРЕЙД
+         ${fmt(upgradeCost(f))}
+
+       </button>
+       `:
+
+       `
+       <button
+         class="fbtn"
+         disabled>
+
+         MAX
+
+       </button>
+       `
+     }
+
+     <button
+       class="fbtn hot"
+       ${
+         f.heat<=0||
+         S.v<f.cd?
+         'disabled':
+         ''
+       }
+       onclick="resetHeat(${i})">
+
+       ${
+         S.v<f.cd?
+         fmtT(f.cd-S.v):
+         'СБРОС'
+       }
+
+     </button>
+
+   </div>
+
+ </div>`;
+}
+
+/* ================= TERMINAL ================= */
+
+function renderTerminal(){
+
+ const el=
+   document.getElementById(
+     'scr-terminal'
+   );
+
+ if(!el)return;
+
+ const p=
+   pendingCollect();
+
+ const capPct=
+   Math.min(
+     100,
+     p/
+     (
+       Math.max(
+         totalIncome(),
+         1
+       )*
+       12
+     )*
+     100
+   );
+
+ let h=`
+
+ <div class="panel">
+
+   <div class="ptitle">
+
+     ТЕРМИНАЛ УЗЛА ·
+     ДОХОД +${fmt(totalIncome())}/Ч ·
+     СИНЕРГИЯ ×${synergyMult().toFixed(2)}
+
+   </div>
+
+   <button
+     id="collectBtn"
+     class="${p>=1?'pulse':''}"
+     ${p<1?'disabled':''}
+     onclick="collect()">
+
+     ▶ СОБРАТЬ
+     +${fmt(p)} C₵
+
+   </button>
+
+   <div id="capBar">
+     <div
+       id="capFill"
+       style="width:${capPct}%">
+     </div>
+   </div>
+
+   <div class="capLabel">
+
+     <span>
+       НАКОПЛЕНО
+       ${fmtT(
+         Math.min(
+           Math.max(
+             S.v-S.lastCollect,
+             0
+           ),
+           12*H
+         )
+       )}
+     </span>
+
+     <span>КАП 12Ч</span>
+
+   </div>
+
+ </div>`;
+
+ if(S.owner){
+
+   h+=`
+
+   <div class="ownerBanner">
+
+     <div>
+
+       <div class="t">
+         ⛓ ВЛАДЕНИЕ:
+         @${S.owner.name}
+       </div>
+
+       <div class="s">
+         удерживается налог 25% ·
+         откуп в разделе ЦЕПЬ
+       </div>
+
+     </div>
+
+     <button
+       class="fbtn hot"
+       onclick="go('chain')">
+
+       ОТКУП
+
+     </button>
+
+   </div>`;
+ }
+
+ h+=`
+
+ <div class="sectTitle">
+
+   <span>
+     ТВОИ УЗЛЫ ·
+     ${S.farms.length}
+   </span>
+
+   <button
+     class="fbtn"
+     ${
+       S.v<S.allCd?
+       'disabled':
+       ''
+     }
+     onclick="resetAllHeat()">
+
+     СБРОС ВСЕХ
+     ${
+       S.v<S.allCd?
+       ' '+fmtT(S.allCd-S.v):
+       ''
+     }
+
+   </button>
+
+ </div>
+
+ <div class="farmGrid">
+
+   ${S.farms
+     .map(farmCardHTML)
+     .join('')}
+
+ </div>
+
+ <div class="sectTitle">
+
+   <span>МАГАЗИН ФЕРМ</span>
+
+   <span class="mini">
+     баланс ${fmt(S.balance)}
+   </span>
+
+ </div>
+
+ <div class="shopStrip">
+
+ ${
+   CARDS.map(c=>{
+
+     const r=
+       RARITY[c.rarity];
+
+     const owned=
+       S.farms.filter(
+         f=>f.key===c.key
+       ).length;
+
+     return `
+
+     <div
+       class="scard"
+       style="
+         border:1px solid
+         ${r.color}33
+       ">
+
+       <div
+         class="fname"
+         style="
+           color:#fff;
+           font-size:10px
+         ">
+
+         ${c.name}
+
+       </div>
+
+       <div
+         class="frar"
+         style="color:${r.color}">
+
+         ${r.label}
+         ${
+           owned?
+           ' · ×'+owned:
+           ''
+         }
+
+       </div>
+
+       <div
+         class="finc">
+
+         +${fmt(c.income)}/ч
+
+       </div>
+
+       <div class="price">
+         ${fmt(c.price)} C₵
+       </div>
+
+       <button
+         class="buyBtn"
+         ${
+           S.balance<c.price?
+           'disabled':
+           ''
+         }
+         onclick="buyCard('${c.key}')">
+
+         УСТАНОВИТЬ
+
+       </button>
+
+     </div>`;
+   }).join('')
+ }
+
+ </div>`;
+
+ el.innerHTML=h;
+}
+
+/* ================= MARKET ================= */
+
+function botCardHTML(b){
+
+ const price=
+   botPrice(b);
+
+ return `
+
+ <div class="mcard">
+
+   <div class="top">
+
+     <div class="nm">
+       PLAYER @${b.name}
+     </div>
+
+     <div class="st online">
+       ONLINE
+     </div>
+
+   </div>
+
+   <div class="mid">
+
+     <span>
+       доход
+       <b>
+         +${fmt(b.income)}/ч
+       </b>
+     </span>
+
+     <span>
+       стоимость
+       <b>
+         ${fmt(price)} C₵
+       </b>
+     </span>
+
+   </div>
+
+   <div class="bot">
+
+     <div class="pr">
+       ${fmt(price)} C₵
+     </div>
+
+     <button
+       class="buyBtn"
+       ${
+         S.balance<price?
+         'disabled':
+         ''
+       }
+       onclick="buyBot('${b.id}')">
+
+       КУПИТЬ
+
+     </button>
+
+   </div>
+
+ </div>`;
+}
+
+function renderMarket(){
+
+ const el=
+   document.getElementById(
+     'scr-market'
+   );
+
+ if(!el)return;
+
+ let h=`
+
+ <div
+   class="panel"
+   style="
+     border-color:
+     rgba(139,92,246,.3)
+   ">
+
+   <div class="ptitle">
+     ТВОЯ РЫНОЧНАЯ СТОИМОСТЬ
+   </div>
+
+   <div
+     class="mono"
+     style="
+       font-size:22px;
+       font-weight:800;
+       color:var(--violet2)
+     ">
+
+     ${fmt(myValue())} C₵
+
+   </div>
+
+   <div class="mini">
+
+     = доход/час × 24 ·
+     реальные игроки
+
+   </div>
+
+ </div>
+
+ <div class="sectTitle">
+
+   <span>
+     ИГРОКИ ·
+     ${S.bots.length}
+   </span>
+
+   <span class="mini">
+     реальные аккаунты
+   </span>
+
+ </div>`;
+
+ if(!S.bots.length){
+
+   h+=`
+
+   <div class="panel">
+
+     <div
+       class="mini"
+       style="text-align:center">
+
+       ПОКА НЕТ СВОБОДНЫХ ИГРОКОВ
+
+     </div>
+
+   </div>`;
+
+ }else{
+
+   h+=
+     S.bots
+       .map(botCardHTML)
+       .join('');
+ }
+
+ el.innerHTML=h;
+}
+
+/* ================= CHAIN ================= */
+
+function chainNodeHTML(n,lvl){
+
+ return `
+
+ <div
+   class="chainNode ${
+     lvl>1?'l2':''
+   }">
+
+   <div class="nm">
+     @${n.name}
+   </div>
+
+   <div class="inf">
+
+     доход
+     ${fmt(n.income)}/ч ·
+     твой налог
+
+     <b>
+       +${fmt(
+         n.income*
+         Math.pow(.25,lvl)
+       )}/ч
+     </b>
+
+   </div>
+
+   ${
+     (n.subs||[])
+       .map(
+         s=>
+           chainNodeHTML(
+             s,
+             lvl+1
+           )
+       )
+       .join('')
+   }
+
+ </div>`;
+}
+
+function renderChain(){
+
+ const el=
+   document.getElementById(
+     'scr-chain'
+   );
+
+ if(!el)return;
+
+ let h='';
+
+ if(S.owner){
+
+   const cost=
+     ransomCost();
+
+   const pct=
+     cost>0?
+     Math.min(
+       100,
+       S.balance/cost*100
+     ):
+     0;
+
+   h+=`
+
+   <div class="ransomPanel">
+
+     <div
+       class="ptitle"
+       style="color:var(--red)">
+
+       ⛓ ТЫ В ВЛАДЕНИИ
+       @${S.owner.name}
+
+     </div>
+
+     <div
+       style="
+         display:flex;
+         justify-content:space-between;
+         align-items:baseline
+       ">
+
+       <span class="mini">
+         стоимость откупа
+       </span>
+
+       <span class="cost">
+         ${fmt(cost)} C₵
+       </span>
+
+     </div>
+
+     <div id="capBar">
+
+       <div
+         id="capFill"
+         style="
+           width:${pct}%;
+           background:
+           linear-gradient(
+             90deg,
+             var(--green),
+             #86EFAC
+           )
+         ">
+       </div>
+
+     </div>
+
+     <div
+       class="mini">
+
+       накоплено
+       ${fmt(S.balance)}
+       /
+       ${fmt(cost)}
+
+     </div>
+
+     <button
+       class="dangerBtn"
+       style="
+         border-color:
+         rgba(34,197,94,.5);
+         color:var(--green);
+         background:
+         rgba(34,197,94,.07)
+       "
+       ${
+         S.balance<cost?
+         'disabled':
+         ''
+       }
+       onclick="ransom()">
+
+       ОТКУПИТЬСЯ ·
+       ИММУНИТЕТ 5Ч
+
+     </button>
+
+   </div>`;
+
+ }else{
+
+   h+=`
+
+   <div class="freeNode">
+
+     ◈ СВОБОДЕН ·
+     ${
+       S.v<S.immunity?
+
+       'иммунитет '+
+       fmtT(
+         S.immunity-S.v
+       ):
+
+       (
+         S.v<S.shieldUntil?
+         'щит активен':
+         'БЕЗ ЗАЩИТЫ — тебя могут купить'
+       )
+     }
+
+   </div>`;
+ }
+
+ h+=`
+
+ <div class="sectTitle">
+
+   <span>
+     ТВОИ ВАССАЛЫ ·
+     ${S.vassals.length}
+     · налог цепи
+     +${fmt(taxIncome())}/ч
+   </span>
+
+ </div>`;
+
+ if(S.vassals.length){
+
+   h+=
+     S.vassals
+       .map(
+         v=>chainNodeHTML(v,1)
+       )
+       .join('');
+
+ }else{
+
+   h+=`
+
+   <div
+     class="mini"
+     style="padding:10px 0">
+
+     цепь пуста —
+     купи игроков на рынке
+     или пригласи друга
+
+   </div>`;
+ }
+
+ h+=`
+
+ <div class="panel">
+
+   <div class="ptitle">
+
+     ИНВАЙТ ·
+     ПРИГЛАШЕНО ${S.refCount}
+
+   </div>
+
+   <div class="mini">
+
+     Перешедший по ссылке
+     автоматически станет
+     твоим вассалом
+
+   </div>
+
+   <div class="refBox">
+
+     <div class="link">
+
+       https://t.me/TheCageGameBot?start=ref_${S.refCode}
+
+     </div>
+
+     <button
+       class="fbtn"
+       onclick="copyRef()">
+
+       КОПИЯ
+
+     </button>
+
+   </div>
+
+   <div
+     class="fbtns">
+
+     <button
+       class="fbtn primary"
+       onclick="shareRef()">
+
+       ➤ ПОДЕЛИТЬСЯ В TELEGRAM
+
+     </button>
+
+   </div>
+
+ </div>`;
+
+ el.innerHTML=h;
+}
+
+/* ================= PROFILE ================= */
+
+function renderProfile(){
+
+ const el=
+   document.getElementById(
+     'scr-profile'
+   );
+
+ if(!el)return;
+
+ const st=S.stats;
+
+ let h=`
+
+ <div class="panel">
+
+   <div class="ptitle">
+
+     ЗАЩИТА УЗЛА ·
+     ${
+       S.v<S.shieldUntil?
+       '🛡 '+
+       S.shieldTier+
+       ' '+
+       fmtT(
+         S.shieldUntil-S.v
+       ):
+       'НЕАКТИВНА'
+     }
+
+   </div>`;
+
+ if(S.v<S.shieldCd){
+
+   h+=`
+
+   <div
+     class="mini"
+     style="
+       color:var(--red);
+       margin-bottom:8px
+     ">
+
+     кулдаун щитов:
+     ${fmtT(
+       S.shieldCd-S.v
+     )}
+
+   </div>`;
+ }
+
+ h+=
+   SHIELDS.map(sh=>{
+
+     const cost=
+       Math.round(
+         personalIncome()*
+         sh.mult
+       );
+
+     return `
+
+     <div class="shieldRow">
+
+       <div>
+
+         <div class="nm">
+           ${sh.label}
+         </div>
+
+         <div class="ds">
+           ${sh.desc} ·
+           цена ${fmt(cost)} C₵
+         </div>
+
+       </div>
+
+       <button
+         class="buyBtn"
+         ${
+           S.balance<cost||
+           S.v<S.shieldCd?
+           'disabled':
+           ''
+         }
+         onclick="buyShield('${sh.key}')">
+
+         КУПИТЬ
+
+       </button>
+
+     </div>`;
+
+   }).join('')+
+   `</div>`;
+
+ h+=`
+
+ <div class="panel">
+
+   <div class="ptitle">
+     СТАТИСТИКА
+   </div>
+
+   <div class="statGrid">
+
+     <div class="statCell">
+       <div class="v">
+         ${fmt(st.collected)}
+       </div>
+       <div class="l">
+         СОБРАНО
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${fmt(st.taxesEarned)}
+       </div>
+       <div class="l">
+         НАЛОГИ ЦЕПИ
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${fmt(st.taxesPaid)}
+       </div>
+       <div class="l">
+         НАЛОГ ХОЗЯИНУ
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${S.vassals.length}
+       </div>
+       <div class="l">
+         ВАССАЛЫ
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${st.purch}
+       </div>
+       <div class="l">
+         ПОКУПОК
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${st.ransoms}/${st.raids}
+       </div>
+       <div class="l">
+         ОТКУПОВ/НАБЕГОВ
+       </div>
+     </div>
+
+   </div>
+
+ </div>`;
+
+ h+=`
+
+ <div class="panel">
+
+   <div class="ptitle">
+     ЖУРНАЛ ТРАНЗАКЦИЙ
+   </div>
+
+   ${
+     S.journal.length?
+
+     S.journal
+       .map(
+         j=>`
+
+         <div class="jitem">
+
+           <span class="nt">
+
+             ${j.type}
+             ${
+               j.note?
+               ' · '+j.note:
+               ''
+             }
+
+           </span>
+
+           <span
+             class="${
+               j.amount>=0?
+               'plus':
+               'minus'
+             }">
+
+             ${
+               j.amount>=0?
+               '+':
+               ''
+             }
+
+             ${fmt(j.amount)}
+
+           </span>
+
+         </div>
+         `
+       )
+       .join(''):
+
+     '<div class="mini">пусто</div>'
+   }
+
+ </div>`;
+
+ h+=`
+
+ <button
+   class="dangerBtn"
+   onclick="resetGame()">
+
+   ⟲ СБРОС ПРОГРЕССА
+
+ </button>`;
+
+ el.innerHTML=h;
+}
+
+/* ================= BOOT ================= */
+
+(function(){
+
+ const lines=[
+   '> THE CAGE v1.0 // NODE BOOT',
+   '> авторизация Telegram......OK',
+   '> Supabase connection.......READY',
+   '> реестр игроков............READY',
+   '> рынок реальных игроков....READY',
+   '> щит новичка активирован...24Ч',
+   '> ДОБРО ПОЖАЛОВАТЬ В ЦЕПЬ, ОПЕРАТОР'
+ ];
+
+ const el=
+   document.getElementById(
+     'bootText'
+   );
+
+ const enter=
+   document.getElementById(
+     'bootEnter'
+   );
+
+ const boot=
+   document.getElementById(
+     'boot'
+   );
+
+ if(!el||!boot)return;
+
+ let i=0;
+
+ const iv=
+   setInterval(
+     ()=>{
+
+       if(i<lines.length){
+
+         el.textContent+=
+           lines[i]+'\n';
+
+         i++;
+
+       }else{
+
+         clearInterval(iv);
+
+         if(enter)
+           enter.style.display=
+             'block';
+       }
+
+     },
+     260
+   );
+
+ boot.addEventListener(
+   'click',
+   ()=>{
+
+     boot.style.opacity='0';
+
+     setTimeout(
+       ()=>{
+         boot.remove();
+       },
+       650
+     );
+
+   },
+   {once:true}
+ );
+
+})();
 
 /* ================= TIMERS ================= */
 
@@ -1273,1121 +3780,6 @@ window.addEventListener(
  save
 );
 
-/* ================= RENDER ================= */
-
-function go(t){
-
- document
-   .querySelectorAll('.screen')
-   .forEach(
-     s=>s.classList.remove('active')
-   );
-
- document
-   .getElementById('scr-'+t)
-   .classList.add('active');
-
- document
-   .querySelectorAll('.tab')
-   .forEach(
-     x=>x.classList.toggle(
-       'active',
-       x.dataset.t===t
-     )
-   );
-
- render();
-}
-
-function render(){
-
- renderHeader();
- renderTerminal();
- renderMarket();
- renderChain();
- renderProfile();
-}
-
-function renderHeader(){
-
- document
-   .getElementById('hBalance')
-   .textContent=
-   fmt(S.balance)+' C₵';
-
- document
-   .getElementById('hIncome')
-   .textContent=
-   '+'+
-   fmt(totalIncome())+
-   '/ч';
-
- const sh=
-   document.getElementById('hShield');
-
- if(S.v<S.shieldUntil){
-
-   sh.className='';
-
-   sh.textContent=
-     '🛡 '+
-     S.shieldTier+
-     ' '+
-     fmtT(
-       S.shieldUntil-S.v
-     );
-
- }else{
-
-   sh.className='none';
-
-   sh.textContent=
-     'БЕЗ ЗАЩИТЫ';
- }
-}
-
-/* ================= FARM CARD ================= */
-
-function farmCardHTML(f,i){
-
- const c=card(f.key);
- const r=RARITY[c.rarity];
-
- const oh=
-   f.heat>=100;
-
- return `
- <div class="fcard ${oh?'overheat':''}" style="--rc:${r.color}">
-
-  <div class="flvl">
-   LVL ${f.lvl}
-  </div>
-
-  <div class="fname">
-   ${c.name}
-  </div>
-
-  <div class="frar">
-   ${r.label}
-  </div>
-
-  <div class="finc">
-   +${fmt(
-     farmIncome(f)*
-     synergyMult()
-   )}/ч
-   ${
-     oh?
-     '<span style="color:var(--red);font-size:9px">OVERHEAT</span>':
-     ''
-   }
-  </div>
-
-  <div class="heatBar">
-   <div
-    class="heatFill"
-    style="width:${f.heat}%">
-   </div>
-  </div>
-
-  <div class="heatLabel">
-   <span>HEAT</span>
-   <span>${Math.floor(f.heat)}%</span>
-  </div>
-
-  <div class="fbtns">
-
-   ${
-     f.lvl<10?
-     `
-     <button
-      class="fbtn primary"
-      onclick="upgradeFarm(${i})">
-      АПГРЕЙД ${fmt(upgradeCost(f))}
-     </button>
-     `:
-     `
-     <button
-      class="fbtn"
-      disabled>
-      MAX
-     </button>
-     `
-   }
-
-   <button
-    class="fbtn hot"
-    ${
-      f.heat<=0||
-      S.v<f.cd?
-      'disabled':
-      ''
-    }
-    onclick="resetHeat(${i})">
-
-    ${
-      S.v<f.cd?
-      fmtT(f.cd-S.v):
-      'СБРОС'
-    }
-
-   </button>
-
-  </div>
-
- </div>`;
-}
-
-/* ================= TERMINAL ================= */
-
-function renderTerminal(){
-
- const p=pendingCollect();
-
- const capPct=
-   Math.min(
-     100,
-     p/
-     (
-       Math.max(
-         totalIncome(),
-         1
-       )*
-       12
-     )*
-     100
-   );
-
- let h=`
-
- <div class="panel">
-
-  <div class="ptitle">
-   ТЕРМИНАЛ УЗЛА ·
-   ДОХОД +${fmt(totalIncome())}/Ч ·
-   СИНЕРГИЯ ×${synergyMult().toFixed(2)}
-  </div>
-
-  <button
-   id="collectBtn"
-   class="${p>=1?'pulse':''}"
-   ${p<1?'disabled':''}
-   onclick="collect()">
-
-   ▶ СОБРАТЬ&nbsp;
-   +${fmt(p)} C₵
-
-  </button>
-
-  <div id="capBar">
-   <div
-    id="capFill"
-    style="width:${capPct}%">
-   </div>
-  </div>
-
-  <div class="capLabel">
-   <span>
-    НАКОПЛЕНО
-    ${fmtT(
-      Math.min(
-        S.v-S.lastCollect,
-        12*H
-      )
-    )}
-   </span>
-
-   <span>КАП 12Ч</span>
-  </div>
-
- </div>`;
-
- if(S.owner){
-
-   h+=`
-
-   <div class="ownerBanner">
-
-    <div>
-
-     <div class="t">
-      ⛓ ВЛАДЕНИЕ:
-      @${S.owner.name}
-     </div>
-
-     <div class="s">
-      удерживается налог 25% ·
-      откуп в разделе ЦЕПЬ
-     </div>
-
-    </div>
-
-    <button
-     class="fbtn hot"
-     style="flex:0 0 auto;padding:9px 14px"
-     onclick="go('chain')">
-
-     ОТКУП
-
-    </button>
-
-   </div>`;
- }
-
- h+=`
-
- <div class="sectTitle">
-
-  <span>
-   ТВОИ УЗЛЫ ·
-   ${S.farms.length}
-  </span>
-
-  <button
-   class="fbtn"
-   style="flex:0 0 auto;padding:6px 12px"
-   ${
-     S.v<S.allCd?
-     'disabled':
-     ''
-   }
-   onclick="resetAllHeat()">
-
-   СБРОС ВСЕХ
-   ${
-     S.v<S.allCd?
-     ' '+fmtT(S.allCd-S.v):
-     ''
-   }
-
-  </button>
-
- </div>
-
- <div class="farmGrid">
-  ${S.farms.map(farmCardHTML).join('')}
- </div>`;
-
- h+=`
-
- <div class="sectTitle">
-
-  <span>МАГАЗИН ФЕРМ</span>
-
-  <span class="mini">
-   баланс ${fmt(S.balance)}
-  </span>
-
- </div>
-
- <div class="shopStrip">
-
- ${
-   CARDS.map(c=>{
-
-     const r=RARITY[c.rarity];
-
-     const owned=
-       S.farms.filter(
-         f=>f.key===c.key
-       ).length;
-
-     return `
-
-     <div
-      class="scard"
-      style="
-       --rc:${r.color};
-       border:1px solid ${r.color}33
-      ">
-
-      <div
-       class="fname"
-       style="
-        font-family:'JetBrains Mono';
-        font-size:10px;
-        font-weight:700;
-        color:#fff
-       ">
-
-       ${c.name}
-
-      </div>
-
-      <div
-       class="frar"
-       style="
-        color:${r.color};
-        font-size:8px;
-        letter-spacing:1.5px;
-        margin-top:2px
-       ">
-
-       ${r.label}
-       ${owned?' · ×'+owned:''}
-
-      </div>
-
-      <div
-       class="finc"
-       style="
-        font-family:'JetBrains Mono';
-        font-size:12px;
-        color:var(--blue2);
-        margin-top:6px
-       ">
-
-       +${fmt(c.income)}/ч
-
-      </div>
-
-      <div class="price">
-       ${fmt(c.price)} C₵
-      </div>
-
-      <button
-       class="buyBtn"
-       style="
-        width:100%;
-        margin-top:8px;
-        padding:8px
-       "
-       ${
-         S.balance<c.price?
-         'disabled':
-         ''
-       }
-       onclick="buyCard('${c.key}')">
-
-       УСТАНОВИТЬ
-
-      </button>
-
-     </div>`;
-
-   }).join('')
- }
-
- </div>`;
-
- document
-   .getElementById(
-     'scr-terminal'
-   )
-   .innerHTML=h;
-}
-
-/* ================= MARKET ================= */
-
-function botCardHTML(b){
-
- const price=botPrice(b);
-
- return `
-
- <div class="mcard">
-
-  <div class="top">
-
-   <div class="nm">
-    PLAYER @${b.name}
-   </div>
-
-   <div class="st online">
-    ONLINE
-   </div>
-
-  </div>
-
-  <div class="mid">
-
-   <span>
-    доход
-    <b>
-     +${fmt(b.income)}/ч
-    </b>
-   </span>
-
-   <span>
-    стоимость
-    <b>
-     ${fmt(price)} C₵
-    </b>
-   </span>
-
-  </div>
-
-  <div class="bot">
-
-   <div class="pr">
-    ${fmt(price)} C₵
-   </div>
-
-   <button
-    class="buyBtn"
-    ${
-      S.balance<price?
-      'disabled':
-      ''
-    }
-    onclick="buyBot('${b.id}')">
-
-    КУПИТЬ
-
-   </button>
-
-  </div>
-
- </div>`;
-}
-
-function renderMarket(){
-
- let h=`
-
- <div
-  class="panel"
-  style="
-   border-color:
-   rgba(139,92,246,.3)
-  ">
-
-  <div class="ptitle">
-   ТВОЯ РЫНОЧНАЯ СТОИМОСТЬ
-  </div>
-
-  <div
-   class="mono"
-   style="
-    font-size:22px;
-    font-weight:800;
-    color:var(--violet2)
-   ">
-
-   ${fmt(myValue())} C₵
-
-  </div>
-
-  <div
-   class="mini"
-   style="margin-top:4px">
-
-   = доход/час × 24 ·
-   реальные игроки
-
-  </div>
-
- </div>`;
-
- h+=`
-
- <div class="sectTitle">
-
-  <span>
-   ИГРОКИ ·
-   ${S.bots.length}
-  </span>
-
-  <span class="mini">
-   реальные аккаунты
-  </span>
-
- </div>`;
-
- if(!S.bots.length){
-
-   h+=`
-
-   <div class="panel">
-
-    <div
-     class="mini"
-     style="text-align:center">
-
-     ПОКА НЕТ СВОБОДНЫХ ИГРОКОВ
-
-    </div>
-
-   </div>`;
-
- }else{
-
-   h+=S.bots
-     .map(botCardHTML)
-     .join('');
- }
-
- document
-   .getElementById(
-     'scr-market'
-   )
-   .innerHTML=h;
-}
-
-/* ================= CHAIN ================= */
-
-function chainNodeHTML(n,lvl){
-
- return `
-
- <div
-  class="chainNode ${
-    lvl>1?'l2':''
-  }">
-
-  <div class="nm">
-   @${n.name}
-  </div>
-
-  <div class="inf">
-
-   доход
-   ${fmt(n.income)}/ч ·
-   твой налог
-
-   <b>
-    +${fmt(
-      n.income*
-      Math.pow(0.25,lvl)
-    )}/ч
-   </b>
-
-  </div>
-
-  ${
-    (n.subs||[])
-      .map(
-        s=>
-          chainNodeHTML(
-            s,
-            lvl+1
-          )
-      )
-      .join('')
-  }
-
- </div>`;
-}
-
-function renderChain(){
-
- let h='';
-
- if(S.owner){
-
-   const cost=ransomCost();
-
-   const pct=
-     Math.min(
-       100,
-       S.balance/
-       cost*
-       100
-     );
-
-   h+=`
-
-   <div class="ransomPanel">
-
-    <div
-     class="ptitle"
-     style="color:var(--red)">
-
-     ⛓ ТЫ В ВЛАДЕНИИ
-     @${S.owner.name}
-
-    </div>
-
-    <div
-     style="
-      display:flex;
-      justify-content:space-between;
-      align-items:baseline
-     ">
-
-     <span class="mini">
-      стоимость откупа
-     </span>
-
-     <span class="cost">
-      ${fmt(cost)} C₵
-     </span>
-
-    </div>
-
-    <div
-     id="capBar"
-     style="margin-top:10px">
-
-     <div
-      id="capFill"
-      style="
-       width:${pct}%;
-       background:
-       linear-gradient(
-        90deg,
-        var(--green),
-        #86EFAC
-       )
-      ">
-     </div>
-
-    </div>
-
-    <div
-     class="mini"
-     style="margin-top:6px">
-
-     накоплено
-     ${fmt(S.balance)}
-     /
-     ${fmt(cost)}
-     · владение
-     ${
-       (
-        (S.v-S.owner.since)/H
-       ).toFixed(1)
-     }ч
-
-    </div>
-
-    <button
-     class="dangerBtn"
-     style="
-      border-color:
-      rgba(34,197,94,.5);
-      color:var(--green);
-      background:
-      rgba(34,197,94,.07)
-     "
-     ${
-       S.balance<cost?
-       'disabled style="opacity:.4"':
-       ''
-     }
-     onclick="ransom()">
-
-     ОТКУПИТЬСЯ ·
-     ИММУНИТЕТ 5Ч
-
-    </button>
-
-   </div>`;
-
- }else{
-
-   h+=`
-
-   <div class="freeNode">
-
-    ◈ СВОБОДЕН ·
-    ${
-      S.v<S.immunity?
-      'иммунитет '+
-      fmtT(S.immunity-S.v):
-      (
-        S.v<S.shieldUntil?
-        'щит активен':
-        'БЕЗ ЗАЩИТЫ — тебя могут купить'
-      )
-    }
-
-   </div>`;
- }
-
- h+=`
-
- <div class="sectTitle">
-
-  <span>
-   ТВОИ ВАССАЛЫ ·
-   ${S.vassals.length}
-   · налог цепи
-   +${fmt(taxIncome())}/ч
-  </span>
-
- </div>`;
-
- h+=S.vassals.length?
-
-   S.vassals
-     .map(
-       v=>chainNodeHTML(v,1)
-     )
-     .join(''):
-
-   `
-   <div
-    class="mini"
-    style="padding:10px 0">
-
-    цепь пуста —
-    купи игроков на рынке
-    или пригласи друга
-
-   </div>`;
-
- h+=`
-
- <div
-  class="panel"
-  style="margin-top:14px">
-
-  <div class="ptitle">
-
-   ИНВАЙТ ·
-   ПРИГЛАШЕНО ${S.refCount}
-
-  </div>
-
-  <div class="mini">
-
-   Перешедший по ссылке
-   автоматически станет
-   твоим вассалом
-
-  </div>
-
-  <div class="refBox">
-
-   <div class="link">
-
-    https://t.me/TheCageGameBot?start=ref_${S.refCode}
-
-   </div>
-
-   <button
-    class="fbtn"
-    style="
-     flex:0 0 auto;
-     padding:10px 14px
-    "
-    onclick="copyRef()">
-
-    КОПИЯ
-
-   </button>
-
-  </div>
-
-  <div
-   class="fbtns"
-   style="margin-top:8px">
-
-   <button
-    class="fbtn primary"
-    style="padding:11px"
-    onclick="shareRef()">
-
-    ➤ ПОДЕЛИТЬСЯ В TELEGRAM
-
-   </button>
-
-  </div>
-
- </div>`;
-
- document
-   .getElementById(
-     'scr-chain'
-   )
-   .innerHTML=h;
-}
-
-/* ================= PROFILE ================= */
-
-function renderProfile(){
-
- const st=S.stats;
-
- let h=`
-
- <div class="panel">
-
-  <div class="ptitle">
-
-   ЗАЩИТА УЗЛА ·
-   ${
-     S.v<S.shieldUntil?
-     '🛡 '+
-     S.shieldTier+
-     ' '+
-     fmtT(
-       S.shieldUntil-S.v
-     ):
-     'НЕАКТИВНА'
-   }
-
-  </div>`;
-
- if(S.v<S.shieldCd){
-
-   h+=`
-
-   <div
-    class="mini"
-    style="
-     color:var(--red);
-     margin-bottom:8px
-    ">
-
-    кулдаун щитов:
-    ${fmtT(
-      S.shieldCd-S.v
-    )}
-
-   </div>`;
- }
-
- h+=SHIELDS
-   .map(sh=>{
-
-     const cost=
-       Math.round(
-         personalIncome()*
-         sh.mult
-       );
-
-     return `
-
-     <div class="shieldRow">
-
-      <div>
-
-       <div class="nm">
-        ${sh.label}
-       </div>
-
-       <div class="ds">
-        ${sh.desc} ·
-        цена ${fmt(cost)} C₵
-       </div>
-
-      </div>
-
-      <button
-       class="buyBtn"
-       ${
-         S.balance<cost||
-         S.v<S.shieldCd?
-         'disabled':
-         ''
-       }
-       onclick="buyShield('${sh.key}')">
-
-       КУПИТЬ
-
-      </button>
-
-     </div>`;
-
-   })
-   .join('')+
-   `</div>`;
-
- h+=`
-
- <div class="panel">
-
-  <div class="ptitle">
-   СТАТИСТИКА
-  </div>
-
-  <div class="statGrid">
-
-   <div class="statCell">
-    <div class="v">
-     ${fmt(st.collected)}
-    </div>
-    <div class="l">
-     СОБРАНО
-    </div>
-   </div>
-
-   <div class="statCell">
-    <div class="v">
-     ${fmt(st.taxesEarned)}
-    </div>
-    <div class="l">
-     НАЛОГИ ЦЕПИ
-    </div>
-   </div>
-
-   <div class="statCell">
-    <div class="v">
-     ${fmt(st.taxesPaid)}
-    </div>
-    <div class="l">
-     НАЛОГ ХОЗЯИНУ
-    </div>
-   </div>
-
-   <div class="statCell">
-    <div class="v">
-     ${S.vassals.length}
-    </div>
-    <div class="l">
-     ВАССАЛЫ
-    </div>
-   </div>
-
-   <div class="statCell">
-    <div class="v">
-     ${st.purch}
-    </div>
-    <div class="l">
-     ПОКУПОК
-    </div>
-   </div>
-
-   <div class="statCell">
-    <div class="v">
-     ${st.ransoms}/${st.raids}
-    </div>
-    <div class="l">
-     ОТКУПОВ/НАБЕГОВ
-    </div>
-   </div>
-
-  </div>
-
- </div>`;
-
- h+=`
-
- <div class="panel">
-
-  <div class="ptitle">
-   ЖУРНАЛ ТРАНЗАКЦИЙ
-  </div>
-
-  ${
-    S.journal.length?
-
-    S.journal
-      .map(j=>`
-
-       <div class="jitem">
-
-        <span class="nt">
-         ${j.type}
-         ${
-           j.note?
-           ' · '+j.note:
-           ''
-         }
-        </span>
-
-        <span
-         class="${
-           j.amount>=0?
-           'plus':
-           'minus'
-         }">
-
-         ${
-           j.amount>=0?
-           '+':
-           ''
-         }
-
-         ${fmt(j.amount)}
-
-        </span>
-
-       </div>
-      `)
-      .join(''):
-
-    '<div class="mini">пусто</div>'
-  }
-
- </div>`;
-
- h+=`
-
- <button
-  class="dangerBtn"
-  onclick="resetGame()">
-
-  ⟲ СБРОС ПРОГРЕССА
-
- </button>`;
-
- document
-   .getElementById(
-     'scr-profile'
-   )
-   .innerHTML=h;
-}
-
-/* ================= BOOT ================= */
-
-(function(){
-
- const lines=[
-  '> THE CAGE v1.0 // NODE BOOT',
-  '> авторизация Telegram......OK',
-  '> Supabase connection.......READY',
-  '> реестр игроков............READY',
-  '> рынок реальных игроков....READY',
-  '> щит новичка активирован...24Ч',
-  '> ДОБРО ПОЖАЛОВАТЬ В ЦЕПЬ, ОПЕРАТОР'
- ];
-
- const el=
-   document.getElementById(
-     'bootText'
-   );
-
- let i=0;
-
- const iv=setInterval(()=>{
-
-   if(i<lines.length){
-
-     el.textContent+=
-       lines[i]+'\n';
-
-     i++;
-
-   }else{
-
-     clearInterval(iv);
-
-     document
-       .getElementById(
-         'bootEnter'
-       )
-       .style.display='block';
-   }
-
- },260);
-
- document
-   .getElementById('boot')
-   .addEventListener(
-     'click',
-     ()=>{
-
-       const b=
-         document.getElementById(
-           'boot'
-         );
-
-       b.style.opacity='0';
-
-       setTimeout(
-         ()=>b.remove(),
-         650
-       );
-
-     },
-     {once:true}
-   );
-
-})();
-
 /* ================= START ================= */
 
 render();
@@ -2395,3 +3787,6 @@ render();
 startDatabase();
 
 </script>
+
+</body>
+</html>
