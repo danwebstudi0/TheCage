@@ -3794,7 +3794,137 @@ window.addEventListener(
 
 render();
 
-startDatabase();
+async function processReferral(){
+
+  const id=playerId();
+
+  if(!id)return;
+
+  const startParam=
+    tg?.initDataUnsafe?.start_param;
+
+  alert(
+    'START PARAM: '+
+    (startParam||'НЕТ')
+  );
+
+  if(!startParam)return;
+
+  const value=String(startParam);
+
+  if(!value.startsWith('ref_'))
+    return;
+
+  const code=value.substring(4).trim();
+
+  if(!code)return;
+
+  try{
+
+    const {data:owner,error:ownerError}=
+      await sb
+        .from('players')
+        .select(
+          'id,username,market_value,income'
+        )
+        .eq('ref_code',code)
+        .maybeSingle();
+
+    if(ownerError){
+
+      alert(
+        'ОШИБКА OWNER: '+
+        ownerError.message
+      );
+
+      return;
+    }
+
+    if(!owner){
+
+      alert(
+        'КОД НЕ НАЙДЕН: '+
+        code
+      );
+
+      return;
+    }
+
+    if(String(owner.id)===String(id))
+      return;
+
+    const {data:me}=await sb
+      .from('players')
+      .select('id,vassal_of')
+      .eq('id',id)
+      .maybeSingle();
+
+    if(me?.vassal_of)
+      return;
+
+    const {data:updateData,error:updateError}=
+      await sb
+        .from('players')
+        .update({
+          vassal_of:String(owner.id)
+        })
+        .eq('id',id)
+        .is('vassal_of',null)
+        .select();
+
+    if(updateError){
+
+      alert(
+        'ОШИБКА UPDATE: '+
+        updateError.message
+      );
+
+      return;
+    }
+
+    if(!updateData?.length){
+
+      alert('ВАССАЛ НЕ УСТАНОВЛЕН');
+
+      return;
+    }
+
+    S.owner={
+      id:String(owner.id),
+      name:owner.username||'Игрок',
+      price:Number(
+        owner.market_value||
+        owner.income*24||
+        240
+      ),
+      since:S.v
+    };
+
+    toast(
+      '⛓ ТЫ СТАЛ ВАССАЛОМ @'+
+      (owner.username||'Игрок'),
+      'good'
+    );
+
+    save();
+
+    alert(
+      'ГОТОВО! ВАССАЛ: @'+
+      (owner.username||'Игрок')
+    );
+
+  }catch(e){
+
+    alert(
+      'ОШИБКА: '+e.message
+    );
+
+    console.error(
+      'Referral error:',
+      e
+    );
+  }
+}
 
 </script>
 
