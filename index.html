@@ -1459,6 +1459,14 @@ async function loadMyRelations(){
 
 async function processReferral(){
 
+alert(
+  'START PARAM: ' +
+  (
+    tg?.initDataUnsafe?.start_param ||
+    'НЕТ'
+  )
+);
+  
  const id=playerId();
 
  if(!id)return;
