@@ -1,181 +1,8 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>THE CAGE — Цепи Дохода</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#000000; --panel:#121212; --panel2:#16161A;
-  --blue:#3B82F6; --blue2:#60A5FA; --violet:#8B5CF6; --violet2:#A855F7;
-  --red:#EF4444; --orange:#F97316; --green:#22C55E; --text:#E5E7EB; --dim:#6B7280;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;overflow:hidden}
-.mono{font-family:'JetBrains Mono',monospace}
-#app{max-width:480px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;position:relative;
-  background:
-    radial-gradient(600px 300px at 80% -10%, rgba(139,92,246,.08), transparent 60%),
-    radial-gradient(500px 260px at 10% 110%, rgba(59,130,246,.07), transparent 60%),
-    var(--bg);}
-#app::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
-  background-size:24px 24px;}
-#app::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:60;
-  background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px);}
-/* ---------- BOOT ---------- */
-#boot{position:absolute;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;cursor:pointer;transition:opacity .6s}
-#boot pre{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue2);line-height:1.9;text-align:left;min-height:200px;text-shadow:0 0 12px rgba(59,130,246,.5)}
-#boot .enter{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:3px;color:var(--violet2);animation:blink 1.2s infinite}
-#boot h1{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;letter-spacing:6px;color:#fff;text-shadow:0 0 24px rgba(139,92,246,.8)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
-/* ---------- HEADER ---------- */
-#hdr{position:relative;z-index:5;padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(12px);background:rgba(18,18,18,.7)}
-#hdr .row1{display:flex;align-items:center;justify-content:space-between}
-#logo{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:15px;letter-spacing:2px;color:#fff}
-#logo span{color:var(--violet2);text-shadow:0 0 14px rgba(168,85,247,.8)}
-#speedBtn{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.4);color:var(--violet2);border-radius:8px;padding:5px 10px;cursor:pointer}
-#speedBtn.on{background:rgba(139,92,246,.3);box-shadow:0 0 14px rgba(139,92,246,.4)}
-#hdr .row2{display:flex;align-items:baseline;gap:10px;margin-top:6px}
-#hBalance{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:#fff}
-#hIncome{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue2)}
-#hShield{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.08)}
-#hShield.none{border-color:rgba(239,68,68,.4);color:var(--red);background:rgba(239,68,68,.08)}
-/* ---------- SCREENS ---------- */
-#screens{flex:1;overflow-y:auto;position:relative;z-index:5;padding:14px 14px 90px;scrollbar-width:none}
-#screens::-webkit-scrollbar{display:none}
-.screen{display:none;animation:fadein .25s}
-.screen.active{display:block}
-@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px;backdrop-filter:blur(16px);margin-bottom:12px;position:relative}
-.ptitle{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2.5px;color:var(--dim);margin-bottom:10px}
-/* collect */
-#collectBtn{width:100%;border:none;border-radius:14px;padding:16px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;letter-spacing:1px;color:#fff;cursor:pointer;
-  background:linear-gradient(135deg,#2563EB,#7C3AED);box-shadow:0 0 26px rgba(124,58,237,.45);transition:transform .1s}
-#collectBtn:active{transform:scale(.97)}
-#collectBtn:disabled{opacity:.35;box-shadow:none}
-#collectBtn.pulse{animation:pulse 2.2s infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 22px rgba(124,58,237,.35)}50%{box-shadow:0 0 42px rgba(124,58,237,.75)}}
-#capBar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
-#capFill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--violet2));transition:width .5s}
-.capLabel{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-top:6px;display:flex;justify-content:space-between}
-/* owner banner */
-.ownerBanner{border:1px solid rgba(239,68,68,.45);background:rgba(239,68,68,.07);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.ownerBanner .t{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);letter-spacing:1px}
-.ownerBanner .s{font-size:11px;color:var(--dim);margin-top:3px}
-/* farms grid */
-.farmGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fcard{background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;position:relative;overflow:hidden}
-.fcard::before{content:'';position:absolute;inset:0;border-radius:14px;padding:1px;background:linear-gradient(135deg,var(--rc,#7C8DA6),transparent 60%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.8;pointer-events:none}
-.fcard.overheat{animation:hotblink 1.1s infinite}
-@keyframes hotblink{0%,100%{box-shadow:0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 22px rgba(239,68,68,.55)}}
-.fcard .fname{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff}
-.fcard .frar{font-size:8px;letter-spacing:1.5px;color:var(--rc,#7C8DA6);margin-top:2px}
-.fcard .finc{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--blue2);margin-top:8px}
-.fcard .flvl{position:absolute;top:10px;right:10px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);border:1px solid rgba(255,255,255,.15);padding:2px 6px;border-radius:5px}
-.heatBar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:9px;overflow:hidden}
-.heatFill{height:100%;background:linear-gradient(90deg,#F97316,#EF4444)}
-.heatLabel{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px;display:flex;justify-content:space-between}
-.fbtns{display:flex;gap:6px;margin-top:9px}
-.fbtn{flex:1;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--text);border-radius:8px;padding:7px 4px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;transition:.15s}
-.fbtn:active{transform:scale(.94)}
-.fbtn.primary{border-color:rgba(59,130,246,.5);color:var(--blue2);background:rgba(59,130,246,.1)}
-.fbtn.hot{border-color:rgba(239,68,68,.55);color:var(--red);background:rgba(239,68,68,.1)}
-.fbtn:disabled{opacity:.3}
-.fbtn.grn{border-color:rgba(34,197,94,.5);color:var(--green);background:rgba(34,197,94,.1)}
-/* shop strip */
-.shopStrip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
-.shopStrip::-webkit-scrollbar{display:none}
-.scard{min-width:150px;background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;position:relative}
-.scard .price{font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;margin-top:8px}
-/* market */
-.mcard{background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;margin-bottom:10px;position:relative;overflow:hidden}
-.mcard.locked{opacity:.55}
-.mcard.degraded{border-color:rgba(249,115,22,.4)}
-.mcard .top{display:flex;justify-content:space-between;align-items:center}
-.mcard .nm{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#fff}
-.mcard .st{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:5px}
-.st.online{color:var(--green);border:1px solid rgba(34,197,94,.4)}
-.st.deg{color:var(--orange);border:1px solid rgba(249,115,22,.5);animation:blink 1.6s infinite}
-.st.shield{color:var(--blue2);border:1px solid rgba(59,130,246,.5)}
-.mcard .mid{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:8px;display:flex;gap:14px}
-.mcard .mid b{color:var(--blue2)}
-.mcard .bot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.mcard .pr{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:var(--violet2)}
-.mcard .pr .old{font-size:10px;color:var(--dim);text-decoration:line-through;font-weight:400;margin-right:6px}
-.buyBtn{border:none;border-radius:10px;padding:9px 18px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:11px;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--violet),var(--violet2));box-shadow:0 0 16px rgba(139,92,246,.4)}
-.buyBtn:active{transform:scale(.94)}
-.buyBtn:disabled{background:rgba(255,255,255,.08);box-shadow:none;color:var(--dim);cursor:default}
-/* chain */
-.chainNode{background:var(--panel2);border:1px solid rgba(139,92,246,.25);border-left:3px solid var(--violet);border-radius:10px;padding:10px 12px;margin-bottom:8px}
-.chainNode.l2{margin-left:26px;border-left-color:rgba(139,92,246,.5);border-left-style:dashed;opacity:.85}
-.chainNode .nm{font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff}
-.chainNode .inf{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px}
-.chainNode .inf b{color:var(--violet2)}
-.freeNode{border:1px dashed rgba(34,197,94,.4);border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);margin-bottom:8px}
-.ransomPanel{border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.06);border-radius:14px;padding:14px;margin-bottom:12px}
-.ransomPanel .cost{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:var(--red)}
-.refBox{display:flex;gap:8px;margin-top:8px}
-.refBox .link{flex:1;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue2);background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.3);border-radius:9px;padding:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* profile */
-.shieldRow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-.shieldRow:last-child{border:none}
-.shieldRow .nm{font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff}
-.shieldRow .ds{font-size:10px;color:var(--dim);margin-top:2px}
-.statGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.statCell{background:rgba(255,255,255,.03);border-radius:10px;padding:10px;text-align:center}
-.statCell .v{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:var(--blue2)}
-.statCell .l{font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:4px}
-.jitem{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.jitem .plus{color:var(--green)} .jitem .minus{color:var(--red)} .jitem .nt{color:var(--dim)}
-.dangerBtn{width:100%;margin-top:10px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.06);color:var(--red);border-radius:10px;padding:11px;font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer}
-/* tabbar */
-#tabbar{position:absolute;bottom:0;left:0;right:0;z-index:50;display:flex;background:rgba(10,10,10,.92);backdrop-filter:blur(18px);border-top:1px solid rgba(255,255,255,.07);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;border-radius:10px;color:var(--dim)}
-.tab .ic{font-size:17px;line-height:1}
-.tab .lb{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px}
-.tab.active{color:var(--violet2)}
-.tab.active .ic{text-shadow:0 0 14px rgba(168,85,247,.9)}
-/* toasts */
-#toasts{position:absolute;top:64px;left:0;right:0;z-index:80;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
-.toast{font-family:'JetBrains Mono',monospace;font-size:11px;padding:9px 16px;border-radius:10px;background:rgba(18,18,18,.95);border:1px solid rgba(59,130,246,.4);color:var(--blue2);box-shadow:0 0 20px rgba(59,130,246,.25);animation:toastin .25s, toastout .4s 2.6s forwards}
-.toast.bad{border-color:rgba(239,68,68,.5);color:var(--red);box-shadow:0 0 20px rgba(239,68,68,.25)}
-.toast.good{border-color:rgba(34,197,94,.5);color:var(--green);box-shadow:0 0 20px rgba(34,197,94,.25)}
-@keyframes toastin{from{opacity:0;transform:translateY(-8px)}to{opacity:1}}
-@keyframes toastout{to{opacity:0;transform:translateY(-8px)}}
-.sectTitle{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2.5px;color:var(--dim);margin:16px 0 10px;display:flex;justify-content:space-between;align-items:center}
-.mini{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace}
-</style>
-<base target="_blank">
-</head>
-<body>
-<div id="app">
-  <div id="boot"><h1>THE CAGE</h1><pre id="bootText"></pre><div class="enter" id="bootEnter" style="display:none">[ НАЖМИ, ЧТОБЫ ВОЙТИ ]</div></div>
-  <div id="hdr">
-    <div class="row1"><div id="logo">THE<span>CAGE</span></div><button id="speedBtn" onclick="toggleSpeed()">⚡ ×1</button></div>
-    <div class="row2"><div id="hBalance" class="mono">0 C₵</div><div id="hIncome" class="mono">+0/ч</div><div id="hShield">—</div></div>
-  </div>
-  <div id="screens">
-    <div class="screen active" id="scr-terminal"></div>
-    <div class="screen" id="scr-market"></div>
-    <div class="screen" id="scr-chain"></div>
-    <div class="screen" id="scr-profile"></div>
-  </div>
-  <div id="tabbar">
-    <div class="tab active" data-t="terminal" onclick="go('terminal')"><div class="ic">▮</div><div class="lb">ТЕРМИНАЛ</div></div>
-    <div class="tab" data-t="market" onclick="go('market')"><div class="ic">⇄</div><div class="lb">РЫНОК</div></div>
-    <div class="tab" data-t="chain" onclick="go('chain')"><div class="ic">⛓</div><div class="lb">ЦЕПЬ</div></div>
-    <div class="tab" data-t="profile" onclick="go('profile')"><div class="ic">⚙</div><div class="lb">ПРОФИЛЬ</div></div>
-  </div>
-  <div id="toasts"></div>
-</div>
 <script>
 'use strict';
+
 /* ================= DATA ================= */
+
 const CARDS=[
  {key:'home_server',name:'ДОМАШНИЙ СЕРВЕР',rarity:'common',income:10,price:500},
  {key:'usb_miner',name:'USB-МАЙНЕР',rarity:'common',income:25,price:1200},
@@ -187,20 +14,32 @@ const CARDS=[
  {key:'ai_core',name:'AI CORE',rarity:'epic',income:5500,price:320000},
  {key:'orbital_relay',name:'ОРБИТАЛЬНЫЙ РЕТРАНСЛЯТОР',rarity:'epic',income:14000,price:850000},
  {key:'syndicate_core',name:'ЯДРО СИНДИКАТА',rarity:'legendary',income:40000,price:2600000},
- {key:'protocol_zero',name:'ПРОТОКОЛ НОЛЬ',rarity:'legendary',income:120000,price:9000000},
+ {key:'protocol_zero',name:'ПРОТОКОЛ НОЛЬ',rarity:'legendary',income:120000,price:9000000}
 ];
-const RARITY={common:{label:'ОБЫЧНЫЙ',color:'#7C8DA6'},rare:{label:'РЕДКИЙ',color:'#3B82F6'},epic:{label:'ЭПИЧЕСКИЙ',color:'#8B5CF6'},legendary:{label:'ЛЕГЕНДАРНЫЙ',color:'#E879F9'}};
+
+const RARITY={
+ common:{label:'ОБЫЧНЫЙ',color:'#7C8DA6'},
+ rare:{label:'РЕДКИЙ',color:'#3B82F6'},
+ epic:{label:'ЭПИЧЕСКИЙ',color:'#8B5CF6'},
+ legendary:{label:'ЛЕГЕНДАРНЫЙ',color:'#E879F9'}
+};
+
 const SHIELDS=[
  {key:'basic',label:'BASIC',desc:'1 час защиты',h:1,mult:2},
  {key:'standard',label:'STANDARD',desc:'3 часа защиты',h:3,mult:5},
  {key:'advanced',label:'ADVANCED',desc:'5 часов защиты',h:5,mult:8},
  {key:'fortress',label:'FORTRESS',desc:'10 часов защиты',h:10,mult:14},
- {key:'citadel',label:'CITADEL',desc:'24 часа защиты',h:24,mult:28},
+ {key:'citadel',label:'CITADEL',desc:'24 часа защиты',h:24,mult:28}
 ];
-const LORDS=['NULLPOINTER','SYND1KAT','OV3RLORD','DARKNODE','KASSANDRA_0','R00TK1T','V0IDRUNNER','0BSERVER','M0N0L1T','HEXFATHER'];
-const BOTNAMES=['n3m0','kr1pt0','gh05t','byt3r','v0id','snark','hex3d','m0rph','dusk','l0g1c','rax','nyx','p1xel','sly','0tus','f3rrum','quark','z3ta','umbra','k1l0'];
+
+const LORDS=[
+ 'NULLPOINTER','SYND1KAT','OV3RLORD','DARKNODE','KASSANDRA_0',
+ 'R00TK1T','V0IDRUNNER','0BSERVER','M0N0L1T','HEXFATHER'
+];
+
 const SAVE_KEY='thecage_save_v1';
-  const SUPABASE_URL='https://onjtrzpcehdjhutxfqby.supabase.co';
+
+const SUPABASE_URL='https://onjtrzpcehdjhutxfqby.supabase.co';
 const SUPABASE_KEY='sb_publishable_K705CYyjxaP7bc0F-uL3cg_y6PD5F92';
 
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -208,147 +47,2456 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const tg=window.Telegram?.WebApp;
 tg?.ready();
 tg?.expand();
+
 const H=3600000;
+
+/* ================= USER ================= */
+
+function tgUser(){
+ return tg?.initDataUnsafe?.user || null;
+}
+
+function playerId(){
+ const u=tgUser();
+ return u ? String(u.id) : null;
+}
+
+function playerName(){
+ const u=tgUser();
+ return u?.username || u?.first_name || 'Игрок';
+}
+
 /* ================= STATE ================= */
-function rnd(a,b){return a+Math.random()*(b-a)}
-function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
-function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
-function mkBot(){
-  const income=Math.round(rnd(40,4200));
-  const shielded=Math.random()<0.3;
-  const degraded=Math.random()<0.25;
-  const subs=[]; if(Math.random()<0.35){const n=1+Math.floor(Math.random()*2);for(let i=0;i<n;i++)subs.push({name:pick(BOTNAMES)+'_'+Math.floor(rnd(100,999)),income:Math.round(income*rnd(0.2,0.4)),lvl:2,subs:[]});}
-  return {id:Math.random().toString(36).slice(2),name:pick(BOTNAMES)+'_'+Math.floor(rnd(100,999)),income,shielded,shieldUntil:shielded?Date.now()+rnd(1,6)*H:0,degraded,subs};
+
+function rnd(a,b){
+ return a+Math.random()*(b-a);
 }
+
+function pick(arr){
+ return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function genCode(){
+ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+ let s='';
+ for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];
+ return s;
+}
+
 function defaultState(){
-  const now=Date.now();
-  return {v:now,speed:1,lastReal:now,balance:250,lastCollect:now,
-    farms:[{key:'home_server',lvl:1,heat:0,cd:0}],
-    vassals:[],owner:null,immunity:0,shieldUntil:now+24*H,shieldTier:'NOVICE',shieldCd:0,allCd:0,
-    refCode:genCode(),refCount:0,bots:[],nextRaid:now+26*H,lastMarket:now,
-    stats:{collected:0,taxesEarned:0,taxesPaid:0,purch:0,ransoms:0,raids:0},journal:[]};
+ const now=Date.now();
+
+ return {
+   v:now,
+   speed:1,
+   lastReal:now,
+   balance:250,
+   lastCollect:now,
+
+   farms:[
+     {key:'home_server',lvl:1,heat:0,cd:0}
+   ],
+
+   vassals:[],
+   owner:null,
+
+   immunity:0,
+   shieldUntil:now+24*H,
+   shieldTier:'NOVICE',
+   shieldCd:0,
+   allCd:0,
+
+   refCode:genCode(),
+   refCount:0,
+
+   bots:[],
+
+   nextRaid:now+26*H,
+   lastMarket:now,
+
+   stats:{
+     collected:0,
+     taxesEarned:0,
+     taxesPaid:0,
+     purch:0,
+     ransoms:0,
+     raids:0
+   },
+
+   journal:[]
+ };
 }
+
 let S=load();
-function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(raw){const s=JSON.parse(raw);s.lastReal=Date.now();s.v+=(Date.now()- (s.savedReal||Date.now()))*s.speed;return s;}}catch(e){}const s=defaultState();s.bots=Array.from({length:10},mkBot);return s;}
-function save(){S.savedReal=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
-/* ================= ECONOMY ================= */
-function card(key){return CARDS.find(c=>c.key===key)}
-function farmIncome(f){const c=card(f.key);return c.income*(1+0.35*(f.lvl-1))*(f.heat>=100?0.3:1)}
-function synergyMult(){const cnt={};S.farms.forEach(f=>cnt[card(f.key).rarity]=(cnt[card(f.key).rarity]||0)+1);const n=Math.max(0,...Object.values(cnt),0);return 1+0.05*Math.min(Math.max(n-1,0),4)}
-function personalIncome(){return S.farms.reduce((a,f)=>a+farmIncome(f),0)*synergyMult()}
-function taxOf(node,lvl){let t=node.income*Math.pow(0.25,lvl);(node.subs||[]).forEach(s=>t+=taxOf(s,lvl+1));return t}
-function taxIncome(){return S.vassals.reduce((a,v)=>a+taxOf(v,1),0)}
-function totalIncome(){return personalIncome()+taxIncome()}
-function upgradeCost(f){return Math.round(card(f.key).price*0.5*Math.pow(1.7,f.lvl-1))}
-function botPrice(b){return Math.round(b.income*24*(b.degraded?0.6:1))}
-function ransomCost(){if(!S.owner)return 0;const hrs=(S.v-S.owner.since)/H;return Math.round(S.owner.price*1.5*(1+0.02*hrs))}
-function myValue(){return Math.round(personalIncome()*24)}
-function pendingCollect(){const elapsed=Math.min(S.v-S.lastCollect,12*H);return (totalIncome()/H)*elapsed}
-/* ================= HELPERS ================= */
-function fmt(n){n=Math.floor(n);if(n>=1e6)return (n/1e6).toFixed(2)+'M';if(n>=1e3)return (n/1e3).toFixed(1)+'K';return ''+n}
-function fmtT(ms){if(ms<=0)return '00:00:00';const s=Math.floor(ms/1000);const h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor(s%3600/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0');return h+':'+m+':'+ss}
-function toast(msg,kind){const d=document.createElement('div');d.className='toast'+(kind?' '+kind:'');d.textContent=msg;document.getElementById('toasts').appendChild(d);setTimeout(()=>d.remove(),3200)}
-function log(type,amount,note){S.journal.unshift({t:S.v,type,amount:Math.round(amount),note});if(S.journal.length>40)S.journal.pop()}
-let AC=null;
-function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f||660;o.type='square';g.gain.value=0.03;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.08);o.stop(AC.currentTime+0.09);}catch(e){}}
-/* ================= ACTIONS ================= */
-function collect(){const p=pendingCollect();if(p<1)return;const elapsed=Math.min(S.v-S.lastCollect,12*H);const personal=personalIncome(),tax=taxIncome();const gross=(personal+tax)/H*elapsed;let taxPay=0;if(S.owner){taxPay=gross*(personal/totalIncome())*0.25}const net=gross-taxPay;S.balance+=net;S.stats.collected+=net;S.stats.taxesEarned+=gross*(tax/totalIncome());S.stats.taxesPaid+=taxPay;S.lastCollect=S.v;log('COLLECT',net,S.owner?('налог хозяину −'+fmt(taxPay)):'');toast('+'+fmt(net)+' C₵ СОБРАНО','good');beep(880);save();render();}
-function buyCard(key){const c=card(key);if(S.balance<c.price){toast('НЕДОСТАТОЧНО C₵','bad');return}S.balance-=c.price;S.farms.push({key,lvl:1,heat:0,cd:0});log('FARM_BUY',-c.price,c.name);toast('NODE INSTALLED: '+c.name,'good');beep(720);save();render();}
-function upgradeFarm(i){const f=S.farms[i];const cost=upgradeCost(f);if(S.balance<cost){toast('НЕДОСТАТОЧНО C₵','bad');return}S.balance-=cost;f.lvl++;log('UPGRADE',-cost,card(f.key).name+' → LVL '+f.lvl);toast('УЛУЧШЕНО: '+card(f.key).name+' LVL '+f.lvl,'good');beep(760);save();render();}
-function resetHeat(i){const f=S.farms[i];if(S.v<f.cd||f.heat<=0)return;f.heat=0;f.cd=S.v+30*1000;beep(500);save();render();}
-function resetAllHeat(){if(S.v<S.allCd){toast('КУЛДАУН '+fmtT(S.allCd-S.v),'bad');return}S.farms.forEach(f=>f.heat=0);S.allCd=S.v+5*60*1000;toast('ВСЕ УЗЛЫ ПЕРЕЗАГРУЖЕНЫ','good');beep(520);save();render();}
-function buyBot(id){const b=S.bots.find(x=>x.id===id);if(!b)return;if(b.shielded){toast('ЦЕЛЬ ПОД ЩИТОМ','bad');return}const price=botPrice(b);if(S.balance<price){toast('НЕДОСТАТОЧНО C₵','bad');return}S.balance-=price;S.vassals.push({name:b.name,income:b.income,lvl:1,subs:b.subs});S.bots=S.bots.filter(x=>x.id!==id);S.stats.purch++;log('PLAYER_BUY',-price,'@'+b.name);toast('NODE ACQUIRED: @'+b.name,'good');beep(980);save();render();}
-function ransom(){if(!S.owner)return;const cost=ransomCost();if(S.balance<cost){toast('НЕ ХВАТАЕТ '+fmt(cost-S.balance)+' C₵','bad');return}S.balance-=cost;log('RANSOM',-cost,'освобождение от @'+S.owner.name);S.owner=null;S.immunity=S.v+5*H;S.nextRaid=S.v+rnd(3,7)*H;S.stats.ransoms++;toast('ЦЕПЬ РАЗОРВАНА. ИММУНИТЕТ 5Ч','good');beep(1040);save();render();}
-function buyShield(t){const sh=SHIELDS.find(x=>x.key===t);if(S.v<S.shieldCd){toast('КУЛДАУН ЩИТА '+fmtT(S.shieldCd-S.v),'bad');return}const cost=Math.round(personalIncome()*sh.mult);if(S.balance<cost){toast('НЕДОСТАТОЧНО C₵','bad');return}S.balance-=cost;S.shieldTier=sh.label;S.shieldUntil=S.v+sh.h*H;S.shieldCd=S.v+6*H;log('SHIELD',-cost,sh.label+' '+sh.h+'Ч');toast('SHIELD ACTIVE: '+sh.label,'good');beep(840);save();render();}
-function simInvite(){const income=Math.round(rnd(30,90));const bonus=Math.round(income*24*0.05);S.balance+=bonus;S.vassals.push({name:pick(BOTNAMES)+'_ref'+Math.floor(rnd(10,99)),income,lvl:1,subs:[]});S.refCount++;log('REF_BONUS',bonus,'новый вассал');toast('+'+fmt(bonus)+' C₵ · ВАССАЛ ПРИСОЕДИНИЛСЯ','good');beep(920);save();render();}
-function copyRef(){const link='t.me/TheCageGameBot?start=ref_'+S.refCode;navigator.clipboard&&navigator.clipboard.writeText(link);toast('ССЫЛКА СКОПИРОВАНА');}
-function shareRef(){const link='t.me/TheCageGameBot?start=ref_'+S.refCode;window.open('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Зайди в мою цепь. THE CAGE.'),'_blank');}
-function toggleSpeed(){S.speed=S.speed===1?60:1;document.getElementById('speedBtn').textContent=S.speed===1?'⚡ ×1':'⚡ ×60';document.getElementById('speedBtn').classList.toggle('on',S.speed===60);toast(S.speed===60?'ДЕМО-УСКОРЕНИЕ ×60':'НОРМАЛЬНОЕ ВРЕМЯ');}
-function resetGame(){if(!confirm('СБРОСИТЬ ВЕСЬ ПРОГРЕСС?'))return;localStorage.removeItem(SAVE_KEY);location.reload();}
-/* ================= GAME LOOP ================= */
-function doRaid(){S.owner={name:pick(LORDS),price:myValue(),since:S.v};S.nextRaid=S.v+rnd(3,7)*H;S.stats.raids++;log('CAPTURED',0,'@'+S.owner.name+' купил тебя');toast('⚠ ТЕБЯ КУПИЛ @'+S.owner.name+' — налог 25%','bad');beep(200);}
-function tick(){
-  const now=Date.now();const dt=now-S.lastReal;S.lastReal=now;S.v+=dt*S.speed;
-  S.farms.forEach(f=>{if(f.heat<100)f.heat=Math.min(100,f.heat+dt*S.speed*100/86400000);});
-  if(S.v-S.lastMarket>30*60*1000){S.lastMarket=S.v;if(S.bots.length<12)S.bots.push(mkBot());else S.bots[Math.floor(Math.random()*S.bots.length)]=mkBot();}
-  S.bots.forEach(b=>{if(b.shielded&&S.v>b.shieldUntil)b.shielded=false;});
-  const unprotected=S.v>S.shieldUntil&&S.v>S.immunity;
-  if(unprotected&&S.v>S.nextRaid&&personalIncome()>=30){if(Math.random()<0.5)doRaid();else S.nextRaid=S.v+1*H;}
-  render();
+
+function load(){
+ try{
+   const raw=localStorage.getItem(SAVE_KEY);
+
+   if(raw){
+     const s=JSON.parse(raw);
+
+     s.lastReal=Date.now();
+
+     if(!s.refCode)s.refCode=genCode();
+     if(!s.vassals)s.vassals=[];
+     if(!s.stats)s.stats={collected:0,taxesEarned:0,taxesPaid:0,purch:0,ransoms:0,raids:0};
+     if(!s.journal)s.journal=[];
+     if(!s.farms)s.farms=[];
+
+     return s;
+   }
+ }catch(e){
+   console.error(e);
+ }
+
+ return defaultState();
 }
-setInterval(tick,1000);
-setInterval(save,10000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
-window.addEventListener('beforeunload',save);
+
+function save(){
+ S.savedReal=Date.now();
+
+ try{
+   localStorage.setItem(
+     SAVE_KEY,
+     JSON.stringify(S)
+   );
+ }catch(e){}
+}
+
+/* ================= SUPABASE ================= */
+
+async function syncPlayer(){
+
+ const id=playerId();
+
+ if(!id){
+   console.log('Telegram user не найден');
+   return null;
+ }
+
+ const username=playerName();
+
+ const {data,error}=await sb
+   .from('players')
+   .upsert({
+     id:id,
+     username:username,
+     ref_code:S.refCode,
+     coins:Math.floor(S.balance),
+     income:Math.floor(totalIncome()),
+     market_value:Math.floor(myValue())
+   },{
+     onConflict:'id'
+   })
+   .select()
+   .single();
+
+ if(error){
+   console.error('Supabase sync error:',error);
+   return null;
+ }
+
+ return data;
+}
+
+
+/* ================= REFERRAL ================= */
+
+async function processReferral(){
+
+ const id=playerId();
+
+ if(!id)return;
+
+ const startParam=tg?.initDataUnsafe?.start_param;
+
+ if(!startParam)return;
+
+ if(!startParam.startsWith('ref_'))return;
+
+ const code=startParam.substring(4).trim();
+
+ if(!code)return;
+
+ try{
+
+   const {data:me,error:meError}=await sb
+     .from('players')
+     .select('id,vassal_of')
+     .eq('id',id)
+     .maybeSingle();
+
+   if(meError){
+     console.error(meError);
+     return;
+   }
+
+   /* уже есть хозяин */
+   if(me?.vassal_of)return;
+
+   /* ищем владельца реферального кода */
+
+   const {data:owner,error:ownerError}=await sb
+     .from('players')
+     .select('id,username')
+     .eq('ref_code',code)
+     .maybeSingle();
+
+   if(ownerError){
+     console.error(ownerError);
+     return;
+   }
+
+   if(!owner){
+     console.log('Владелец реферального кода не найден');
+     return;
+   }
+
+   /* нельзя пригласить самого себя */
+
+   if(String(owner.id)===String(id)){
+     console.log('Самореферал запрещён');
+     return;
+   }
+
+   /* назначаем владельца */
+
+   const {error:updateError}=await sb
+     .from('players')
+     .update({
+       vassal_of:String(owner.id)
+     })
+     .eq('id',id)
+     .is('vassal_of',null);
+
+   if(updateError){
+     console.error('Referral update error:',updateError);
+     return;
+   }
+
+   /* локально показываем владельца */
+
+   S.owner={
+     name:owner.username || 'Игрок',
+     id:String(owner.id),
+     price:myValue(),
+     since:S.v
+   };
+
+   S.refCount=0;
+
+   log(
+     'REF_JOIN',
+     0,
+     'вассал @'+(owner.username || 'Игрок')
+   );
+
+   save();
+
+   toast(
+     '⛓ ТЫ СТАЛ ВАССАЛОМ @'+(owner.username || 'Игрок'),
+     'good'
+   );
+
+   render();
+
+ }catch(e){
+   console.error('Referral error:',e);
+ }
+}
+
+
+/* ================= DATABASE DATA ================= */
+
+async function loadRealMarket(){
+
+ const id=playerId();
+
+ if(!id)return;
+
+ const {data,error}=await sb
+   .from('players')
+   .select('id,username,coins,income,market_value,vassal_of,created_at')
+   .is('vassal_of',null)
+   .neq('id',id)
+   .order('income',{
+     ascending:false
+   })
+   .limit(20);
+
+ if(error){
+   console.error('Market error:',error);
+   return;
+ }
+
+ S.bots=(data||[]).map(p=>({
+
+   id:String(p.id),
+
+   name:p.username || 'Игрок',
+
+   income:Number(p.income||10),
+
+   market_value:Number(
+     p.market_value ||
+     Math.max(240,Number(p.income||10)*24)
+   ),
+
+   shielded:false,
+
+   shieldUntil:0,
+
+   degraded:false,
+
+   subs:[]
+ }));
+
+ renderMarket();
+}
+
+
+/* ================= ECONOMY ================= */
+
+function card(key){
+ return CARDS.find(c=>c.key===key);
+}
+
+function farmIncome(f){
+
+ const c=card(f.key);
+
+ return c.income*
+   (1+0.35*(f.lvl-1))*
+   (f.heat>=100?0.3:1);
+}
+
+function synergyMult(){
+
+ const cnt={};
+
+ S.farms.forEach(f=>{
+   const c=card(f.key);
+
+   if(!c)return;
+
+   cnt[c.rarity]=(cnt[c.rarity]||0)+1;
+ });
+
+ const n=Math.max(
+   0,
+   ...Object.values(cnt)
+ );
+
+ return 1+0.05*Math.min(
+   Math.max(n-1,0),
+   4
+ );
+}
+
+function personalIncome(){
+
+ return S.farms.reduce(
+   (a,f)=>a+farmIncome(f),
+   0
+ )*synergyMult();
+}
+
+function taxOf(node,lvl){
+
+ let t=node.income*
+   Math.pow(0.25,lvl);
+
+ (node.subs||[]).forEach(
+   s=>t+=taxOf(s,lvl+1)
+ );
+
+ return t;
+}
+
+function taxIncome(){
+
+ return S.vassals.reduce(
+   (a,v)=>a+taxOf(v,1),
+   0
+ );
+}
+
+function totalIncome(){
+
+ return personalIncome()+taxIncome();
+}
+
+function upgradeCost(f){
+
+ return Math.round(
+   card(f.key).price*
+   0.5*
+   Math.pow(1.7,f.lvl-1)
+ );
+}
+
+function botPrice(b){
+
+ return Math.round(
+   (b.market_value || b.income*24)
+ );
+}
+
+function ransomCost(){
+
+ if(!S.owner)return 0;
+
+ const hrs=(S.v-S.owner.since)/H;
+
+ return Math.round(
+   S.owner.price*
+   1.5*
+   (1+0.02*hrs)
+ );
+}
+
+function myValue(){
+
+ return Math.round(
+   personalIncome()*24
+ );
+}
+
+function pendingCollect(){
+
+ const elapsed=Math.min(
+   S.v-S.lastCollect,
+   12*H
+ );
+
+ return totalIncome()/H*elapsed;
+}
+
+
+/* ================= HELPERS ================= */
+
+function fmt(n){
+
+ n=Math.floor(n);
+
+ if(n>=1e9)
+   return (n/1e9).toFixed(2)+'B';
+
+ if(n>=1e6)
+   return (n/1e6).toFixed(2)+'M';
+
+ if(n>=1e3)
+   return (n/1e3).toFixed(1)+'K';
+
+ return ''+n;
+}
+
+function fmtT(ms){
+
+ if(ms<=0)return '00:00:00';
+
+ const s=Math.floor(ms/1000);
+
+ const h=String(
+   Math.floor(s/3600)
+ ).padStart(2,'0');
+
+ const m=String(
+   Math.floor(s%3600/60)
+ ).padStart(2,'0');
+
+ const ss=String(
+   s%60
+ ).padStart(2,'0');
+
+ return h+':'+m+':'+ss;
+}
+
+function toast(msg,kind){
+
+ const d=document.createElement('div');
+
+ d.className='toast'+
+   (kind?' '+kind:'');
+
+ d.textContent=msg;
+
+ document
+   .getElementById('toasts')
+   .appendChild(d);
+
+ setTimeout(
+   ()=>d.remove(),
+   3200
+ );
+}
+
+function log(type,amount,note){
+
+ S.journal.unshift({
+   t:S.v,
+   type,
+   amount:Math.round(amount),
+   note
+ });
+
+ if(S.journal.length>40)
+   S.journal.pop();
+}
+
+let AC=null;
+
+function beep(f){
+
+ try{
+
+   AC=AC||
+     new(window.AudioContext||
+     window.webkitAudioContext)();
+
+   const o=AC.createOscillator();
+   const g=AC.createGain();
+
+   o.frequency.value=f||660;
+   o.type='square';
+
+   g.gain.value=0.03;
+
+   o.connect(g);
+   g.connect(AC.destination);
+
+   o.start();
+
+   g.gain.exponentialRampToValueAtTime(
+     0.0001,
+     AC.currentTime+0.08
+   );
+
+   o.stop(
+     AC.currentTime+0.09
+   );
+
+ }catch(e){}
+}
+
+
+/* ================= ACTIONS ================= */
+
+function collect(){
+
+ const p=pendingCollect();
+
+ if(p<1)return;
+
+ const elapsed=Math.min(
+   S.v-S.lastCollect,
+   12*H
+ );
+
+ const personal=personalIncome();
+ const tax=taxIncome();
+
+ const gross=
+   (personal+tax)/H*
+   elapsed;
+
+ let taxPay=0;
+
+ if(S.owner){
+   taxPay=
+     gross*
+     (personal/totalIncome())*
+     0.25;
+ }
+
+ const net=gross-taxPay;
+
+ S.balance+=net;
+
+ S.stats.collected+=net;
+
+ S.stats.taxesEarned+=
+   gross*(tax/totalIncome());
+
+ S.stats.taxesPaid+=taxPay;
+
+ S.lastCollect=S.v;
+
+ log(
+   'COLLECT',
+   net,
+   S.owner?
+   ('налог хозяину −'+fmt(taxPay)):
+   ''
+ );
+
+ toast(
+   '+'+fmt(net)+' C₵ СОБРАНО',
+   'good'
+ );
+
+ beep(880);
+
+ save();
+
+ syncPlayer();
+
+ render();
+}
+
+
+function buyCard(key){
+
+ const c=card(key);
+
+ if(S.balance<c.price){
+   toast('НЕДОСТАТОЧНО C₵','bad');
+   return;
+ }
+
+ S.balance-=c.price;
+
+ S.farms.push({
+   key,
+   lvl:1,
+   heat:0,
+   cd:0
+ });
+
+ log(
+   'FARM_BUY',
+   -c.price,
+   c.name
+ );
+
+ toast(
+   'NODE INSTALLED: '+c.name,
+   'good'
+ );
+
+ beep(720);
+
+ save();
+
+ syncPlayer();
+
+ render();
+}
+
+
+function upgradeFarm(i){
+
+ const f=S.farms[i];
+
+ const cost=upgradeCost(f);
+
+ if(S.balance<cost){
+   toast('НЕДОСТАТОЧНО C₵','bad');
+   return;
+ }
+
+ S.balance-=cost;
+
+ f.lvl++;
+
+ log(
+   'UPGRADE',
+   -cost,
+   card(f.key).name+
+   ' → LVL '+f.lvl
+ );
+
+ toast(
+   'УЛУЧШЕНО: '+
+   card(f.key).name+
+   ' LVL '+f.lvl,
+   'good'
+ );
+
+ beep(760);
+
+ save();
+
+ syncPlayer();
+
+ render();
+}
+
+
+function resetHeat(i){
+
+ const f=S.farms[i];
+
+ if(
+   S.v<f.cd||
+   f.heat<=0
+ )return;
+
+ f.heat=0;
+
+ f.cd=
+   S.v+
+   30*1000;
+
+ beep(500);
+
+ save();
+
+ render();
+}
+
+
+function resetAllHeat(){
+
+ if(S.v<S.allCd){
+
+   toast(
+     'КУЛДАУН '+
+     fmtT(S.allCd-S.v),
+     'bad'
+   );
+
+   return;
+ }
+
+ S.farms.forEach(
+   f=>f.heat=0
+ );
+
+ S.allCd=
+   S.v+
+   5*60*1000;
+
+ toast(
+   'ВСЕ УЗЛЫ ПЕРЕЗАГРУЖЕНЫ',
+   'good'
+ );
+
+ beep(520);
+
+ save();
+
+ render();
+}
+
+
+/* ================= REAL PLAYER PURCHASE ================= */
+
+async function buyBot(id){
+
+ const myId=playerId();
+
+ if(!myId){
+   toast('ОТКРОЙ ИГРУ В TELEGRAM','bad');
+   return;
+ }
+
+ const b=S.bots.find(
+   x=>String(x.id)===String(id)
+ );
+
+ if(!b)return;
+
+ const price=botPrice(b);
+
+ if(S.balance<price){
+   toast('НЕДОСТАТОЧНО C₵','bad');
+   return;
+ }
+
+ if(String(id)===String(myId)){
+   toast('НЕЛЬЗЯ КУПИТЬ СЕБЯ','bad');
+   return;
+ }
+
+ try{
+
+   /*
+    сначала проверяем,
+    что игрок ещё свободен
+   */
+
+   const {data:target,error:targetError}=
+     await sb
+       .from('players')
+       .select('id,username,income,market_value,vassal_of')
+       .eq('id',String(id))
+       .maybeSingle();
+
+   if(targetError){
+     console.error(targetError);
+     toast('ОШИБКА СЕРВЕРА','bad');
+     return;
+   }
+
+   if(!target){
+     toast('ИГРОК НЕ НАЙДЕН','bad');
+     await loadRealMarket();
+     return;
+   }
+
+   if(target.vassal_of){
+     toast('ЭТОТ ИГРОК УЖЕ В ЦЕПИ','bad');
+     await loadRealMarket();
+     return;
+   }
+
+   /*
+    назначаем текущего игрока
+    владельцем выбранного игрока
+   */
+
+   const {error:updateError}=
+     await sb
+       .from('players')
+       .update({
+         vassal_of:myId
+       })
+       .eq('id',String(id))
+       .is('vassal_of',null);
+
+   if(updateError){
+     console.error(updateError);
+     toast('НЕ УДАЛОСЬ КУПИТЬ ИГРОКА','bad');
+     return;
+   }
+
+   /*
+    только после успешной базы
+    списываем деньги локально
+   */
+
+   S.balance-=price;
+
+   S.vassals.push({
+     id:String(target.id),
+     name:target.username||'Игрок',
+     income:Number(target.income||10),
+     lvl:1,
+     subs:[]
+   });
+
+   S.stats.purch++;
+
+   log(
+     'PLAYER_BUY',
+     -price,
+     '@'+(target.username||'Игрок')
+   );
+
+   toast(
+     'NODE ACQUIRED: @'+
+     (target.username||'Игрок'),
+     'good'
+   );
+
+   beep(980);
+
+   save();
+
+   await syncPlayer();
+
+   await loadRealMarket();
+
+   render();
+
+ }catch(e){
+
+   console.error(e);
+
+   toast(
+     'ОШИБКА ПОКУПКИ',
+     'bad'
+   );
+ }
+}
+
+
+/* ================= RANSOM ================= */
+
+function ransom(){
+
+ if(!S.owner)return;
+
+ const cost=ransomCost();
+
+ if(S.balance<cost){
+
+   toast(
+     'НЕ ХВАТАЕТ '+
+     fmt(cost-S.balance)+
+     ' C₵',
+     'bad'
+   );
+
+   return;
+ }
+
+ S.balance-=cost;
+
+ log(
+   'RANSOM',
+   -cost,
+   'освобождение от @'+
+   S.owner.name
+ );
+
+ /*
+  освобождаем игрока
+  и на сервере
+ */
+
+ const id=playerId();
+
+ if(id){
+
+   sb
+     .from('players')
+     .update({
+       vassal_of:null
+     })
+     .eq('id',id);
+ }
+
+ S.owner=null;
+
+ S.immunity=
+   S.v+
+   5*H;
+
+ S.nextRaid=
+   S.v+
+   rnd(3,7)*H;
+
+ S.stats.ransoms++;
+
+ toast(
+   'ЦЕПЬ РАЗОРВАНА. ИММУНИТЕТ 5Ч',
+   'good'
+ );
+
+ beep(1040);
+
+ save();
+
+ syncPlayer();
+
+ render();
+}
+
+
+/* ================= SHIELD ================= */
+
+function buyShield(t){
+
+ const sh=
+   SHIELDS.find(x=>x.key===t);
+
+ if(S.v<S.shieldCd){
+
+   toast(
+     'КУЛДАУН ЩИТА '+
+     fmtT(S.shieldCd-S.v),
+     'bad'
+   );
+
+   return;
+ }
+
+ const cost=
+   Math.round(
+     personalIncome()*
+     sh.mult
+   );
+
+ if(S.balance<cost){
+
+   toast(
+     'НЕДОСТАТОЧНО C₵',
+     'bad'
+   );
+
+   return;
+ }
+
+ S.balance-=cost;
+
+ S.shieldTier=sh.label;
+
+ S.shieldUntil=
+   S.v+
+   sh.h*H;
+
+ S.shieldCd=
+   S.v+
+   6*H;
+
+ log(
+   'SHIELD',
+   -cost,
+   sh.label+
+   ' '+sh.h+'Ч'
+ );
+
+ toast(
+   'SHIELD ACTIVE: '+sh.label,
+   'good'
+ );
+
+ beep(840);
+
+ save();
+
+ syncPlayer();
+
+ render();
+}
+
+
+/* ================= REFERRAL UI ================= */
+
+function simInvite(){
+
+ toast(
+   'SIM ОТКЛЮЧЁН — ПРИГЛАШАЙ РЕАЛЬНЫХ ИГРОКОВ',
+   'bad'
+ );
+}
+
+
+function copyRef(){
+
+ const link=
+   'https://t.me/TheCageGameBot?start=ref_'+
+   S.refCode;
+
+ if(navigator.clipboard){
+
+   navigator.clipboard
+     .writeText(link)
+     .then(()=>{
+       toast(
+         'ССЫЛКА СКОПИРОВАНА',
+         'good'
+       );
+     });
+
+ }else{
+
+   toast('СКОПИРУЙ ССЫЛКУ ВРУЧНУЮ');
+ }
+}
+
+
+function shareRef(){
+
+ const link=
+   'https://t.me/TheCageGameBot?start=ref_'+
+   S.refCode;
+
+ const url=
+   'https://t.me/share/url?url='+
+   encodeURIComponent(link)+
+   '&text='+
+   encodeURIComponent(
+     'Зайди в мою цепь. THE CAGE.'
+   );
+
+ window.open(url,'_blank');
+}
+
+
+/* ================= SPEED ================= */
+
+function toggleSpeed(){
+
+ S.speed=
+   S.speed===1?
+   60:
+   1;
+
+ document
+   .getElementById('speedBtn')
+   .textContent=
+   S.speed===1?
+   '⚡ ×1':
+   '⚡ ×60';
+
+ document
+   .getElementById('speedBtn')
+   .classList
+   .toggle(
+     'on',
+     S.speed===60
+   );
+
+ toast(
+   S.speed===60?
+   'ДЕМО-УСКОРЕНИЕ ×60':
+   'НОРМАЛЬНОЕ ВРЕМЯ'
+ );
+}
+
+
+/* ================= RESET ================= */
+
+async function resetGame(){
+
+ if(!confirm(
+   'СБРОСИТЬ ВЕСЬ ПРОГРЕСС?'
+ ))return;
+
+ const id=playerId();
+
+ try{
+
+   if(id){
+
+     /*
+      сначала освобождаем
+      всех наших вассалов
+     */
+
+     await sb
+       .from('players')
+       .update({
+         vassal_of:null
+       })
+       .eq('vassal_of',id);
+
+     /*
+      сбрасываем самого игрока
+     */
+
+     await sb
+       .from('players')
+       .update({
+         coins:250,
+         income:10,
+         market_value:240,
+         vassal_of:null,
+         ref_code:genCode()
+       })
+       .eq('id',id);
+   }
+
+ }catch(e){
+
+   console.error(
+     'Reset Supabase error:',
+     e
+   );
+ }
+
+ localStorage.removeItem(
+   SAVE_KEY
+ );
+
+ location.reload();
+}
+
+
+/* ================= RAID ================= */
+
+function doRaid(){
+
+ S.owner={
+   name:pick(LORDS),
+   price:myValue(),
+   since:S.v
+ };
+
+ S.nextRaid=
+   S.v+
+   rnd(3,7)*H;
+
+ S.stats.raids++;
+
+ log(
+   'CAPTURED',
+   0,
+   '@'+S.owner.name+
+   ' купил тебя'
+ );
+
+ toast(
+   '⚠ ТЕБЯ КУПИЛ @'+
+   S.owner.name+
+   ' — налог 25%',
+   'bad'
+ );
+
+ beep(200);
+}
+
+
+/* ================= GAME LOOP ================= */
+
+async function tick(){
+
+ const now=Date.now();
+
+ const dt=
+   now-
+   S.lastReal;
+
+ S.lastReal=now;
+
+ S.v+=
+   dt*
+   S.speed;
+
+ S.farms.forEach(f=>{
+
+   if(f.heat<100){
+
+     f.heat=
+       Math.min(
+         100,
+         f.heat+
+         dt*
+         S.speed*
+         100/
+         86400000
+       );
+   }
+ });
+
+ /*
+  реальный рынок обновляем
+  каждые 30 секунд интерфейса
+ */
+
+ if(
+   S.v-
+   S.lastMarket>
+   30000
+ ){
+
+   S.lastMarket=S.v;
+
+   loadRealMarket();
+ }
+
+ const unprotected=
+   S.v>S.shieldUntil &&
+   S.v>S.immunity;
+
+ if(
+   unprotected&&
+   S.v>S.nextRaid&&
+   personalIncome()>=30
+ ){
+
+   if(Math.random()<0.5){
+
+     doRaid();
+
+   }else{
+
+     S.nextRaid=
+       S.v+
+       1*H;
+   }
+ }
+
+ render();
+}
+
+
+/* ================= START DATABASE ================= */
+
+async function startDatabase(){
+
+ try{
+
+   await syncPlayer();
+
+   /*
+    сначала создаём игрока,
+    потом обрабатываем реферал
+   */
+
+   await processReferral();
+
+   /*
+    после реферала
+    загружаем настоящий рынок
+   */
+
+   await loadRealMarket();
+
+ }catch(e){
+
+   console.error(
+     'Database startup error:',
+     e
+   );
+ }
+}
+
+
+/* ================= TIMERS ================= */
+
+setInterval(
+ tick,
+ 1000
+);
+
+setInterval(
+ ()=>{
+   save();
+   syncPlayer();
+ },
+ 10000
+);
+
+document.addEventListener(
+ 'visibilitychange',
+ ()=>{
+   if(document.hidden){
+     save();
+   }
+ }
+);
+
+window.addEventListener(
+ 'beforeunload',
+ save
+);
+
+
 /* ================= RENDER ================= */
-function go(t){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('scr-'+t).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.t===t));render();}
-function render(){renderHeader();renderTerminal();renderMarket();renderChain();renderProfile();}
-function renderHeader(){document.getElementById('hBalance').textContent=fmt(S.balance)+' C₵';document.getElementById('hIncome').textContent='+'+fmt(totalIncome())+'/ч';const sh=document.getElementById('hShield');if(S.v<S.shieldUntil){sh.className='';sh.textContent='🛡 '+S.shieldTier+' '+fmtT(S.shieldUntil-S.v);}else{sh.className='none';sh.textContent='БЕЗ ЗАЩИТЫ';}}
-function farmCardHTML(f,i){const c=card(f.key),r=RARITY[c.rarity];const oh=f.heat>=100;
- return `<div class="fcard ${oh?'overheat':''}" style="--rc:${r.color}">
-  <div class="flvl">LVL ${f.lvl}</div>
-  <div class="fname">${c.name}</div><div class="frar">${r.label}</div>
-  <div class="finc">+${fmt(farmIncome(f)*synergyMult())}/ч ${oh?'<span style="color:var(--red);font-size:9px">OVERHEAT</span>':''}</div>
-  <div class="heatBar"><div class="heatFill" style="width:${f.heat}%"></div></div>
-  <div class="heatLabel"><span>HEAT</span><span>${Math.floor(f.heat)}%</span></div>
+
+function go(t){
+
+ document
+   .querySelectorAll('.screen')
+   .forEach(
+     s=>s.classList.remove('active')
+   );
+
+ document
+   .getElementById('scr-'+t)
+   .classList.add('active');
+
+ document
+   .querySelectorAll('.tab')
+   .forEach(
+     x=>x.classList.toggle(
+       'active',
+       x.dataset.t===t
+     )
+   );
+
+ render();
+}
+
+
+function render(){
+
+ renderHeader();
+ renderTerminal();
+ renderMarket();
+ renderChain();
+ renderProfile();
+}
+
+
+function renderHeader(){
+
+ document
+   .getElementById('hBalance')
+   .textContent=
+   fmt(S.balance)+' C₵';
+
+ document
+   .getElementById('hIncome')
+   .textContent=
+   '+'+
+   fmt(totalIncome())+
+   '/ч';
+
+ const sh=
+   document.getElementById('hShield');
+
+ if(S.v<S.shieldUntil){
+
+   sh.className='';
+
+   sh.textContent=
+     '🛡 '+
+     S.shieldTier+
+     ' '+
+     fmtT(
+       S.shieldUntil-S.v
+     );
+
+ }else{
+
+   sh.className='none';
+
+   sh.textContent=
+     'БЕЗ ЗАЩИТЫ';
+ }
+}
+
+
+/* ================= FARM CARD ================= */
+
+function farmCardHTML(f,i){
+
+ const c=card(f.key);
+ const r=RARITY[c.rarity];
+
+ const oh=
+   f.heat>=100;
+
+ return `
+ <div class="fcard ${oh?'overheat':''}" style="--rc:${r.color}">
+
+  <div class="flvl">
+   LVL ${f.lvl}
+  </div>
+
+  <div class="fname">
+   ${c.name}
+  </div>
+
+  <div class="frar">
+   ${r.label}
+  </div>
+
+  <div class="finc">
+   +${fmt(
+     farmIncome(f)*
+     synergyMult()
+   )}/ч
+   ${
+     oh?
+     '<span style="color:var(--red);font-size:9px">OVERHEAT</span>':
+     ''
+   }
+  </div>
+
+  <div class="heatBar">
+   <div
+    class="heatFill"
+    style="width:${f.heat}%">
+   </div>
+  </div>
+
+  <div class="heatLabel">
+   <span>HEAT</span>
+   <span>${Math.floor(f.heat)}%</span>
+  </div>
+
   <div class="fbtns">
-   ${f.lvl<10?`<button class="fbtn primary" onclick="upgradeFarm(${i})">АПГРЕЙД ${fmt(upgradeCost(f))}</button>`:`<button class="fbtn" disabled>MAX</button>`}
-   <button class="fbtn hot" ${f.heat<=0||S.v<f.cd?'disabled':''} onclick="resetHeat(${i})">${S.v<f.cd?fmtT(f.cd-S.v):'СБРОС'}</button>
-  </div></div>`;}
-function renderTerminal(){const p=pendingCollect();const capPct=Math.min(100,(p/(Math.max(totalIncome(),1)*12))*100);
- let h=`<div class="panel"><div class="ptitle">ТЕРМИНАЛ УЗЛА · ДОХОД +${fmt(totalIncome())}/Ч · СИНЕРГИЯ ×${synergyMult().toFixed(2)}</div>
- <button id="collectBtn" class="${p>=1?'pulse':''}" ${p<1?'disabled':''} onclick="collect()">▶ СОБРАТЬ&nbsp; +${fmt(p)} C₵</button>
- <div id="capBar"><div id="capFill" style="width:${capPct}%"></div></div>
- <div class="capLabel"><span>НАКОПЛЕНО ${fmtT(Math.min(S.v-S.lastCollect,12*H))}</span><span>КАП 12Ч</span></div></div>`;
- if(S.owner){h+=`<div class="ownerBanner"><div><div class="t">⛓ ВЛАДЕНИЕ: @${S.owner.name}</div><div class="s">удерживается налог 25% · откуп в разделе ЦЕПЬ</div></div><button class="fbtn hot" style="flex:0 0 auto;padding:9px 14px" onclick="go('chain')">ОТКУП</button></div>`;}
- h+=`<div class="sectTitle"><span>ТВОИ УЗЛЫ · ${S.farms.length}</span><button class="fbtn" style="flex:0 0 auto;padding:6px 12px" ${S.v<S.allCd?'disabled':''} onclick="resetAllHeat()">СБРОС ВСЕХ${S.v<S.allCd?' '+fmtT(S.allCd-S.v):''}</button></div><div class="farmGrid">${S.farms.map(farmCardHTML).join('')}</div>`;
- h+=`<div class="sectTitle"><span>МАГАЗИН ФЕРМ</span><span class="mini">баланс ${fmt(S.balance)}</span></div><div class="shopStrip">${CARDS.map(c=>{const r=RARITY[c.rarity];const owned=S.farms.filter(f=>f.key===c.key).length;return `<div class="scard" style="--rc:${r.color};border:1px solid ${r.color}33"><div class="fname" style="font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:#fff">${c.name}</div><div class="frar" style="color:${r.color};font-size:8px;letter-spacing:1.5px;margin-top:2px">${r.label}${owned?' · ×'+owned:''}</div><div class="finc" style="font-family:'JetBrains Mono';font-size:12px;color:var(--blue2);margin-top:6px">+${fmt(c.income)}/ч</div><div class="price">${fmt(c.price)} C₵</div><button class="buyBtn" style="width:100%;margin-top:8px;padding:8px" ${S.balance<c.price?'disabled':''} onclick="buyCard('${c.key}')">УСТАНОВИТЬ</button></div>`}).join('')}</div>`;
- document.getElementById('scr-terminal').innerHTML=h;}
-function botCardHTML(b){const price=botPrice(b);const locked=b.shielded;const subCount=(b.subs||[]).length;
- return `<div class="mcard ${b.degraded?'degraded':''} ${locked?'locked':''}">
-  <div class="top"><div class="nm">NODE @${b.name}</div>
-   <div class="st ${locked?'shield':b.degraded?'deg':'online'}">${locked?'🛡 '+fmtT(b.shieldUntil-S.v):b.degraded?'DEGRADED':'ONLINE'}</div></div>
-  <div class="mid"><span>доход <b>+${fmt(b.income)}/ч</b></span><span>вассалы <b>${subCount}</b></span>${b.degraded?'<span style="color:var(--orange)">чёрный рынок −40%</span>':''}</div>
-  <div class="bot"><div class="pr">${b.degraded?`<span class="old">${fmt(b.income*24)}</span>`:''}${fmt(price)} C₵</div>
-   <button class="buyBtn" ${locked||S.balance<price?'disabled':''} onclick="buyBot('${b.id}')">${locked?'LOCKED':'КУПИТЬ'}</button></div></div>`;}
-function renderMarket(){let h=`<div class="panel" style="border-color:rgba(139,92,246,.3)"><div class="ptitle">ТВОЯ РЫНОЧНАЯ СТОИМОСТЬ</div><div class="mono" style="font-size:22px;font-weight:800;color:var(--violet2)">${fmt(myValue())} C₵</div><div class="mini" style="margin-top:4px">= доход/час × 24 · расти вместе с фермами</div></div>`;
- h+=`<div class="sectTitle"><span>ДОСТУПНЫЕ УЗЛЫ · ${S.bots.length}</span><span class="mini">обновление раз/30мин</span></div>${S.bots.map(botCardHTML).join('')}`;
- document.getElementById('scr-market').innerHTML=h;}
-function chainNodeHTML(n,lvl){return `<div class="chainNode ${lvl>1?'l2':''}"><div class="nm">@${n.name}</div><div class="inf">доход ${fmt(n.income)}/ч · твой налог <b>+${fmt(n.income*Math.pow(0.25,lvl))}/ч</b></div>${(n.subs||[]).map(s=>chainNodeHTML(s,lvl+1)).join('')}</div>`;}
-function renderChain(){let h='';
- if(S.owner){const cost=ransomCost();const pct=Math.min(100,S.balance/cost*100);
-  h+=`<div class="ransomPanel"><div class="ptitle" style="color:var(--red)">⛓ ТЫ ВЛАДЕНИЕ УЗЛА @${S.owner.name}</div>
-  <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mini">стоимость откупа</span><span class="cost">${fmt(cost)} C₵</span></div>
-  <div id="capBar" style="margin-top:10px"><div id="capFill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),#86EFAC)"></div></div>
-  <div class="mini" style="margin-top:6px">накоплено ${fmt(S.balance)} / ${fmt(cost)} · владение ${((S.v-S.owner.since)/H).toFixed(1)}ч</div>
-  <button class="dangerBtn" style="border-color:rgba(34,197,94,.5);color:var(--green);background:rgba(34,197,94,.07)" ${S.balance<cost?'disabled style="opacity:.4"':''} onclick="ransom()">ОТКУПИТЬСЯ · ИММУНИТЕТ 5Ч</button></div>`;
- }else{h+=`<div class="freeNode">◈ СВОБОДЕН · ${S.v<S.immunity?'иммунитет '+fmtT(S.immunity-S.v):(S.v<S.shieldUntil?'щит активен':'БЕЗ ЗАЩИТЫ — тебя могут купить')}</div>`;}
- h+=`<div class="sectTitle"><span>ТВОИ ВАССАЛЫ · ${S.vassals.length} · налог цепи +${fmt(taxIncome())}/ч</span></div>`;
- h+=S.vassals.length?S.vassals.map(v=>chainNodeHTML(v,1)).join(''):'<div class="mini" style="padding:10px 0">цепь пуста — купи узлы на рынке или пригласи игроков</div>';
- h+=`<div class="panel" style="margin-top:14px"><div class="ptitle">ИНВАЙТ · ПРИГЛАШЕНО ${S.refCount}</div>
-  <div class="mini">перешедший по ссылке автоматически станет твоим вассалом</div>
-  <div class="refBox"><div class="link">t.me/TheCageGameBot?start=ref_${S.refCode}</div><button class="fbtn" style="flex:0 0 auto;padding:10px 14px" onclick="copyRef()">КОПИЯ</button></div>
-  <div class="fbtns" style="margin-top:8px"><button class="fbtn primary" style="padding:11px" onclick="shareRef()">➤ ПОДЕЛИТЬСЯ В TELEGRAM</button><button class="fbtn grn" style="padding:11px" onclick="simInvite()">SIM: ПРИГЛАСИТЬ</button></div></div>`;
- document.getElementById('scr-chain').innerHTML=h;}
-function renderProfile(){const st=S.stats;
- let h=`<div class="panel"><div class="ptitle">ЗАЩИТА УЗЛА · ${S.v<S.shieldTier&&S.v<S.shieldUntil?'🛡 '+S.shieldTier+' '+fmtT(S.shieldUntil-S.v):(S.v<S.shieldUntil?'🛡 '+S.shieldTier+' '+fmtT(S.shieldUntil-S.v):'НЕАКТИВНА')}</div>`;
- if(S.v<S.shieldCd)h+=`<div class="mini" style="color:var(--red);margin-bottom:8px">кулдаун щитов: ${fmtT(S.shieldCd-S.v)}</div>`;
- h+=SHIELDS.map(sh=>{const cost=Math.round(personalIncome()*sh.mult);return `<div class="shieldRow"><div><div class="nm">${sh.label}</div><div class="ds">${sh.desc} · цена ${fmt(cost)} C₵</div></div><button class="buyBtn" ${S.balance<cost||S.v<S.shieldCd?'disabled':''} onclick="buyShield('${sh.key}')">КУПИТЬ</button></div>`}).join('')+`</div>`;
- h+=`<div class="panel"><div class="ptitle">СТАТИСТИКА</div><div class="statGrid">
- <div class="statCell"><div class="v">${fmt(st.collected)}</div><div class="l">СОБРАНО</div></div>
- <div class="statCell"><div class="v">${fmt(st.taxesEarned)}</div><div class="l">НАЛОГИ ЦЕПИ</div></div>
- <div class="statCell"><div class="v">${fmt(st.taxesPaid)}</div><div class="l">НАЛОГ ХОЗЯИНУ</div></div>
- <div class="statCell"><div class="v">${S.vassals.length}</div><div class="l">ВАССАЛЫ</div></div>
- <div class="statCell"><div class="v">${st.purch}</div><div class="l">ПОКУПОК</div></div>
- <div class="statCell"><div class="v">${st.ransoms}/${st.raids}</div><div class="l">ОТКУПОВ/НАБЕГОВ</div></div></div></div>`;
- h+=`<div class="panel"><div class="ptitle">ЖУРНАЛ ТРАНЗАКЦИЙ</div>${S.journal.length?S.journal.map(j=>`<div class="jitem"><span class="nt">${j.type} ${j.note?'· '+j.note:''}</span><span class="${j.amount>=0?'plus':'minus'}">${j.amount>=0?'+':''}${fmt(j.amount)}</span></div>`).join(''):'<div class="mini">пусто</div>'}</div>`;
- h+=`<button class="dangerBtn" onclick="resetGame()">⟲ СБРОС ПРОГРЕССА</button>`;
- document.getElementById('scr-profile').innerHTML=h;}
+
+   ${
+     f.lvl<10?
+     `
+     <button
+      class="fbtn primary"
+      onclick="upgradeFarm(${i})">
+      АПГРЕЙД ${fmt(upgradeCost(f))}
+     </button>
+     `:
+     `
+     <button
+      class="fbtn"
+      disabled>
+      MAX
+     </button>
+     `
+   }
+
+   <button
+    class="fbtn hot"
+    ${
+      f.heat<=0||
+      S.v<f.cd?
+      'disabled':
+      ''
+    }
+    onclick="resetHeat(${i})">
+
+    ${
+      S.v<f.cd?
+      fmtT(f.cd-S.v):
+      'СБРОС'
+    }
+
+   </button>
+
+  </div>
+
+ </div>`;
+}
+
+
+/* ================= TERMINAL ================= */
+
+function renderTerminal(){
+
+ const p=pendingCollect();
+
+ const capPct=
+   Math.min(
+     100,
+     p/
+     (
+       Math.max(
+         totalIncome(),
+         1
+       )*
+       12
+     )*
+     100
+   );
+
+ let h=`
+
+ <div class="panel">
+
+  <div class="ptitle">
+   ТЕРМИНАЛ УЗЛА ·
+   ДОХОД +${fmt(totalIncome())}/Ч ·
+   СИНЕРГИЯ ×${synergyMult().toFixed(2)}
+  </div>
+
+  <button
+   id="collectBtn"
+   class="${p>=1?'pulse':''}"
+   ${p<1?'disabled':''}
+   onclick="collect()">
+
+   ▶ СОБРАТЬ&nbsp;
+   +${fmt(p)} C₵
+
+  </button>
+
+  <div id="capBar">
+   <div
+    id="capFill"
+    style="width:${capPct}%">
+   </div>
+  </div>
+
+  <div class="capLabel">
+   <span>
+    НАКОПЛЕНО
+    ${fmtT(
+      Math.min(
+        S.v-S.lastCollect,
+        12*H
+      )
+    )}
+   </span>
+
+   <span>КАП 12Ч</span>
+  </div>
+
+ </div>`;
+
+ if(S.owner){
+
+   h+=`
+
+   <div class="ownerBanner">
+
+    <div>
+
+     <div class="t">
+      ⛓ ВЛАДЕНИЕ:
+      @${S.owner.name}
+     </div>
+
+     <div class="s">
+      удерживается налог 25% ·
+      откуп в разделе ЦЕПЬ
+     </div>
+
+    </div>
+
+    <button
+     class="fbtn hot"
+     style="flex:0 0 auto;padding:9px 14px"
+     onclick="go('chain')">
+
+     ОТКУП
+
+    </button>
+
+   </div>`;
+ }
+
+ h+=`
+
+ <div class="sectTitle">
+
+  <span>
+   ТВОИ УЗЛЫ ·
+   ${S.farms.length}
+  </span>
+
+  <button
+   class="fbtn"
+   style="flex:0 0 auto;padding:6px 12px"
+   ${
+     S.v<S.allCd?
+     'disabled':
+     ''
+   }
+   onclick="resetAllHeat()">
+
+   СБРОС ВСЕХ
+   ${
+     S.v<S.allCd?
+     ' '+fmtT(S.allCd-S.v):
+     ''
+   }
+
+  </button>
+
+ </div>
+
+ <div class="farmGrid">
+  ${S.farms.map(farmCardHTML).join('')}
+ </div>`;
+
+ h+=`
+
+ <div class="sectTitle">
+
+  <span>МАГАЗИН ФЕРМ</span>
+
+  <span class="mini">
+   баланс ${fmt(S.balance)}
+  </span>
+
+ </div>
+
+ <div class="shopStrip">
+
+ ${
+   CARDS.map(c=>{
+
+     const r=RARITY[c.rarity];
+
+     const owned=
+       S.farms.filter(
+         f=>f.key===c.key
+       ).length;
+
+     return `
+
+     <div
+      class="scard"
+      style="
+       --rc:${r.color};
+       border:1px solid ${r.color}33
+      ">
+
+      <div
+       class="fname"
+       style="
+        font-family:'JetBrains Mono';
+        font-size:10px;
+        font-weight:700;
+        color:#fff
+       ">
+
+       ${c.name}
+
+      </div>
+
+      <div
+       class="frar"
+       style="
+        color:${r.color};
+        font-size:8px;
+        letter-spacing:1.5px;
+        margin-top:2px
+       ">
+
+       ${r.label}
+       ${owned?' · ×'+owned:''}
+
+      </div>
+
+      <div
+       class="finc"
+       style="
+        font-family:'JetBrains Mono';
+        font-size:12px;
+        color:var(--blue2);
+        margin-top:6px
+       ">
+
+       +${fmt(c.income)}/ч
+
+      </div>
+
+      <div class="price">
+       ${fmt(c.price)} C₵
+      </div>
+
+      <button
+       class="buyBtn"
+       style="
+        width:100%;
+        margin-top:8px;
+        padding:8px
+       "
+       ${
+         S.balance<c.price?
+         'disabled':
+         ''
+       }
+       onclick="buyCard('${c.key}')">
+
+       УСТАНОВИТЬ
+
+      </button>
+
+     </div>`;
+
+   }).join('')
+ }
+
+ </div>`;
+
+ document
+   .getElementById(
+     'scr-terminal'
+   )
+   .innerHTML=h;
+}
+
+
+/* ================= MARKET ================= */
+
+function botCardHTML(b){
+
+ const price=botPrice(b);
+
+ return `
+
+ <div class="mcard">
+
+  <div class="top">
+
+   <div class="nm">
+    PLAYER @${b.name}
+   </div>
+
+   <div class="st online">
+    ONLINE
+   </div>
+
+  </div>
+
+  <div class="mid">
+
+   <span>
+    доход
+    <b>
+     +${fmt(b.income)}/ч
+    </b>
+   </span>
+
+   <span>
+    стоимость
+    <b>
+     ${fmt(price)} C₵
+    </b>
+   </span>
+
+  </div>
+
+  <div class="bot">
+
+   <div class="pr">
+    ${fmt(price)} C₵
+   </div>
+
+   <button
+    class="buyBtn"
+    ${
+      S.balance<price?
+      'disabled':
+      ''
+    }
+    onclick="buyBot('${b.id}')">
+
+    КУПИТЬ
+
+   </button>
+
+  </div>
+
+ </div>`;
+}
+
+
+function renderMarket(){
+
+ let h=`
+
+ <div
+  class="panel"
+  style="
+   border-color:
+   rgba(139,92,246,.3)
+  ">
+
+  <div class="ptitle">
+   ТВОЯ РЫНОЧНАЯ СТОИМОСТЬ
+  </div>
+
+  <div
+   class="mono"
+   style="
+    font-size:22px;
+    font-weight:800;
+    color:var(--violet2)
+   ">
+
+   ${fmt(myValue())} C₵
+
+  </div>
+
+  <div
+   class="mini"
+   style="margin-top:4px">
+
+   = доход/час × 24 ·
+   реальные игроки
+
+  </div>
+
+ </div>`;
+
+ h+=`
+
+ <div class="sectTitle">
+
+  <span>
+   ИГРОКИ ·
+   ${S.bots.length}
+  </span>
+
+  <span class="mini">
+   реальные аккаунты
+  </span>
+
+ </div>`;
+
+ if(!S.bots.length){
+
+   h+=`
+
+   <div class="panel">
+
+    <div
+     class="mini"
+     style="text-align:center">
+
+     ПОКА НЕТ СВОБОДНЫХ ИГРОКОВ
+
+    </div>
+
+   </div>`;
+
+ }else{
+
+   h+=S.bots
+     .map(botCardHTML)
+     .join('');
+ }
+
+ document
+   .getElementById(
+     'scr-market'
+   )
+   .innerHTML=h;
+}
+
+
+/* ================= CHAIN ================= */
+
+function chainNodeHTML(n,lvl){
+
+ return `
+
+ <div
+  class="chainNode ${
+    lvl>1?'l2':''
+  }">
+
+  <div class="nm">
+   @${n.name}
+  </div>
+
+  <div class="inf">
+
+   доход
+   ${fmt(n.income)}/ч ·
+   твой налог
+
+   <b>
+    +${fmt(
+      n.income*
+      Math.pow(0.25,lvl)
+    )}/ч
+   </b>
+
+  </div>
+
+  ${
+    (n.subs||[])
+      .map(
+        s=>
+          chainNodeHTML(
+            s,
+            lvl+1
+          )
+      )
+      .join('')
+  }
+
+ </div>`;
+}
+
+
+function renderChain(){
+
+ let h='';
+
+ if(S.owner){
+
+   const cost=ransomCost();
+
+   const pct=
+     Math.min(
+       100,
+       S.balance/
+       cost*
+       100
+     );
+
+   h+=`
+
+   <div class="ransomPanel">
+
+    <div
+     class="ptitle"
+     style="color:var(--red)">
+
+     ⛓ ТЫ В ВЛАДЕНИИ
+     @${S.owner.name}
+
+    </div>
+
+    <div
+     style="
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline
+     ">
+
+     <span class="mini">
+      стоимость откупа
+     </span>
+
+     <span class="cost">
+      ${fmt(cost)} C₵
+     </span>
+
+    </div>
+
+    <div
+     id="capBar"
+     style="margin-top:10px">
+
+     <div
+      id="capFill"
+      style="
+       width:${pct}%;
+       background:
+       linear-gradient(
+        90deg,
+        var(--green),
+        #86EFAC
+       )
+      ">
+     </div>
+
+    </div>
+
+    <div
+     class="mini"
+     style="margin-top:6px">
+
+     накоплено
+     ${fmt(S.balance)}
+     /
+     ${fmt(cost)}
+     · владение
+     ${
+       (
+        (S.v-S.owner.since)/H
+       ).toFixed(1)
+     }ч
+
+    </div>
+
+    <button
+     class="dangerBtn"
+     style="
+      border-color:
+      rgba(34,197,94,.5);
+      color:var(--green);
+      background:
+      rgba(34,197,94,.07)
+     "
+     ${
+       S.balance<cost?
+       'disabled style="opacity:.4"':
+       ''
+     }
+     onclick="ransom()">
+
+     ОТКУПИТЬСЯ ·
+     ИММУНИТЕТ 5Ч
+
+    </button>
+
+   </div>`;
+
+ }else{
+
+   h+=`
+
+   <div class="freeNode">
+
+    ◈ СВОБОДЕН ·
+    ${
+      S.v<S.immunity?
+      'иммунитет '+
+      fmtT(S.immunity-S.v):
+      (
+        S.v<S.shieldUntil?
+        'щит активен':
+        'БЕЗ ЗАЩИТЫ — тебя могут купить'
+      )
+    }
+
+   </div>`;
+ }
+
+ h+=`
+
+ <div class="sectTitle">
+
+  <span>
+   ТВОИ ВАССАЛЫ ·
+   ${S.vassals.length}
+   · налог цепи
+   +${fmt(taxIncome())}/ч
+  </span>
+
+ </div>`;
+
+ h+=S.vassals.length?
+
+   S.vassals
+     .map(
+       v=>chainNodeHTML(v,1)
+     )
+     .join(''):
+
+   `
+   <div
+    class="mini"
+    style="padding:10px 0">
+
+    цепь пуста —
+    купи игроков на рынке
+    или пригласи друга
+
+   </div>`;
+
+ h+=`
+
+ <div
+  class="panel"
+  style="margin-top:14px">
+
+  <div class="ptitle">
+
+   ИНВАЙТ ·
+   ПРИГЛАШЕНО ${S.refCount}
+
+  </div>
+
+  <div class="mini">
+
+   Перешедший по ссылке
+   автоматически станет
+   твоим вассалом
+
+  </div>
+
+  <div class="refBox">
+
+   <div class="link">
+
+    https://t.me/TheCageGameBot?start=ref_${S.refCode}
+
+   </div>
+
+   <button
+    class="fbtn"
+    style="
+     flex:0 0 auto;
+     padding:10px 14px
+    "
+    onclick="copyRef()">
+
+    КОПИЯ
+
+   </button>
+
+  </div>
+
+  <div
+   class="fbtns"
+   style="margin-top:8px">
+
+   <button
+    class="fbtn primary"
+    style="padding:11px"
+    onclick="shareRef()">
+
+    ➤ ПОДЕЛИТЬСЯ В TELEGRAM
+
+   </button>
+
+  </div>
+
+ </div>`;
+
+ document
+   .getElementById(
+     'scr-chain'
+   )
+   .innerHTML=h;
+}
+
+
+/* ================= PROFILE ================= */
+
+function renderProfile(){
+
+ const st=S.stats;
+
+ let h=`
+
+ <div class="panel">
+
+  <div class="ptitle">
+
+   ЗАЩИТА УЗЛА ·
+   ${
+     S.v<S.shieldUntil?
+     '🛡 '+
+     S.shieldTier+
+     ' '+
+     fmtT(
+       S.shieldUntil-S.v
+     ):
+     'НЕАКТИВНА'
+   }
+
+  </div>`;
+
+ if(S.v<S.shieldCd){
+
+   h+=`
+
+   <div
+    class="mini"
+    style="
+     color:var(--red);
+     margin-bottom:8px
+    ">
+
+    кулдаун щитов:
+    ${fmtT(
+      S.shieldCd-S.v
+    )}
+
+   </div>`;
+ }
+
+ h+=SHIELDS
+   .map(sh=>{
+
+     const cost=
+       Math.round(
+         personalIncome()*
+         sh.mult
+       );
+
+     return `
+
+     <div class="shieldRow">
+
+      <div>
+
+       <div class="nm">
+        ${sh.label}
+       </div>
+
+       <div class="ds">
+        ${sh.desc} ·
+        цена ${fmt(cost)} C₵
+       </div>
+
+      </div>
+
+      <button
+       class="buyBtn"
+       ${
+         S.balance<cost||
+         S.v<S.shieldCd?
+         'disabled':
+         ''
+       }
+       onclick="buyShield('${sh.key}')">
+
+       КУПИТЬ
+
+      </button>
+
+     </div>`;
+
+   })
+   .join('')+
+   `</div>`;
+
+ h+=`
+
+ <div class="panel">
+
+  <div class="ptitle">
+   СТАТИСТИКА
+  </div>
+
+  <div class="statGrid">
+
+   <div class="statCell">
+    <div class="v">
+     ${fmt(st.collected)}
+    </div>
+    <div class="l">
+     СОБРАНО
+    </div>
+   </div>
+
+   <div class="statCell">
+    <div class="v">
+     ${fmt(st.taxesEarned)}
+    </div>
+    <div class="l">
+     НАЛОГИ ЦЕПИ
+    </div>
+   </div>
+
+   <div class="statCell">
+    <div class="v">
+     ${fmt(st.taxesPaid)}
+    </div>
+    <div class="l">
+     НАЛОГ ХОЗЯИНУ
+    </div>
+   </div>
+
+   <div class="statCell">
+    <div class="v">
+     ${S.vassals.length}
+    </div>
+    <div class="l">
+     ВАССАЛЫ
+    </div>
+   </div>
+
+   <div class="statCell">
+    <div class="v">
+     ${st.purch}
+    </div>
+    <div class="l">
+     ПОКУПОК
+    </div>
+   </div>
+
+   <div class="statCell">
+    <div class="v">
+     ${st.ransoms}/${st.raids}
+    </div>
+    <div class="l">
+     ОТКУПОВ/НАБЕГОВ
+    </div>
+   </div>
+
+  </div>
+
+ </div>`;
+
+ h+=`
+
+ <div class="panel">
+
+  <div class="ptitle">
+   ЖУРНАЛ ТРАНЗАКЦИЙ
+  </div>
+
+  ${
+    S.journal.length?
+
+    S.journal
+      .map(j=>`
+
+       <div class="jitem">
+
+        <span class="nt">
+         ${j.type}
+         ${
+           j.note?
+           ' · '+j.note:
+           ''
+         }
+        </span>
+
+        <span
+         class="${
+           j.amount>=0?
+           'plus':
+           'minus'
+         }">
+
+         ${
+           j.amount>=0?
+           '+':
+           ''
+         }
+
+         ${fmt(j.amount)}
+
+        </span>
+
+       </div>
+      `)
+      .join(''):
+
+    '<div class="mini">пусто</div>'
+  }
+
+ </div>`;
+
+ h+=`
+
+ <button
+  class="dangerBtn"
+  onclick="resetGame()">
+
+  ⟲ СБРОС ПРОГРЕССА
+
+ </button>`;
+
+ document
+   .getElementById(
+     'scr-profile'
+   )
+   .innerHTML=h;
+}
+
+
 /* ================= BOOT ================= */
-(function(){const lines=['> THE CAGE v0.9 // NODE BOOT','> авторизация узла.........OK','> загрузка цепи............OK','> щит новичка активирован..24Ч','> рынок узлов синхронизирован','> ДОБРО ПОЖАЛОВАТЬ В ЦЕПЬ, ОПЕРАТОР'];const el=document.getElementById('bootText');let i=0;
- const iv=setInterval(()=>{if(i<lines.length){el.textContent+=lines[i]+'\n';i++;}else{clearInterval(iv);document.getElementById('bootEnter').style.display='block';}},260);
- document.getElementById('boot').addEventListener('click',()=>{const b=document.getElementById('boot');b.style.opacity='0';setTimeout(()=>b.remove(),650);},{once:true});})();
+
+(function(){
+
+ const lines=[
+  '> THE CAGE v1.0 // NODE BOOT',
+  '> авторизация Telegram......OK',
+  '> Supabase connection.......READY',
+  '> реестр игроков............READY',
+  '> рынок реальных игроков....READY',
+  '> щит новичка активирован...24Ч',
+  '> ДОБРО ПОЖАЛОВАТЬ В ЦЕПЬ, ОПЕРАТОР'
+ ];
+
+ const el=
+   document.getElementById(
+     'bootText'
+   );
+
+ let i=0;
+
+ const iv=setInterval(()=>{
+
+   if(i<lines.length){
+
+     el.textContent+=
+       lines[i]+'\n';
+
+     i++;
+
+   }else{
+
+     clearInterval(iv);
+
+     document
+       .getElementById(
+         'bootEnter'
+       )
+       .style.display='block';
+   }
+
+ },260);
+
+ document
+   .getElementById('boot')
+   .addEventListener(
+     'click',
+     ()=>{
+
+       const b=
+         document.getElementById(
+           'boot'
+         );
+
+       b.style.opacity='0';
+
+       setTimeout(
+         ()=>b.remove(),
+         650
+       );
+
+     },
+     {once:true}
+   );
+
+})();
+
+
+/* ================= START ================= */
+
 render();
+
+startDatabase();
+
 </script>
-</body>
-</html>
