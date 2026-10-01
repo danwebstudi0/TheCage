@@ -250,8 +250,8 @@ function buyBot(id){const b=S.bots.find(x=>x.id===id);if(!b)return;if(b.shielded
 function ransom(){if(!S.owner)return;const cost=ransomCost();if(S.balance<cost){toast('НЕ ХВАТАЕТ '+fmt(cost-S.balance)+' C₵','bad');return}S.balance-=cost;log('RANSOM',-cost,'освобождение от @'+S.owner.name);S.owner=null;S.immunity=S.v+5*H;S.nextRaid=S.v+rnd(3,7)*H;S.stats.ransoms++;toast('ЦЕПЬ РАЗОРВАНА. ИММУНИТЕТ 5Ч','good');beep(1040);save();render();}
 function buyShield(t){const sh=SHIELDS.find(x=>x.key===t);if(S.v<S.shieldCd){toast('КУЛДАУН ЩИТА '+fmtT(S.shieldCd-S.v),'bad');return}const cost=Math.round(personalIncome()*sh.mult);if(S.balance<cost){toast('НЕДОСТАТОЧНО C₵','bad');return}S.balance-=cost;S.shieldTier=sh.label;S.shieldUntil=S.v+sh.h*H;S.shieldCd=S.v+6*H;log('SHIELD',-cost,sh.label+' '+sh.h+'Ч');toast('SHIELD ACTIVE: '+sh.label,'good');beep(840);save();render();}
 function simInvite(){const income=Math.round(rnd(30,90));const bonus=Math.round(income*24*0.05);S.balance+=bonus;S.vassals.push({name:pick(BOTNAMES)+'_ref'+Math.floor(rnd(10,99)),income,lvl:1,subs:[]});S.refCount++;log('REF_BONUS',bonus,'новый вассал');toast('+'+fmt(bonus)+' C₵ · ВАССАЛ ПРИСОЕДИНИЛСЯ','good');beep(920);save();render();}
-function copyRef(){const link='t.me/thecagebot?start=ref_'+S.refCode;navigator.clipboard&&navigator.clipboard.writeText(link);toast('ССЫЛКА СКОПИРОВАНА');}
-function shareRef(){const link='t.me/thecagebot?start=ref_'+S.refCode;window.open('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Зайди в мою цепь. THE CAGE.'),'_blank');}
+function copyRef(){const link='t.me/TheCageGameBot?start=ref_'+S.refCode;navigator.clipboard&&navigator.clipboard.writeText(link);toast('ССЫЛКА СКОПИРОВАНА');}
+function shareRef(){const link='t.me/TheCageGameBot?start=ref_'+S.refCode;window.open('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Зайди в мою цепь. THE CAGE.'),'_blank');}
 function toggleSpeed(){S.speed=S.speed===1?60:1;document.getElementById('speedBtn').textContent=S.speed===1?'⚡ ×1':'⚡ ×60';document.getElementById('speedBtn').classList.toggle('on',S.speed===60);toast(S.speed===60?'ДЕМО-УСКОРЕНИЕ ×60':'НОРМАЛЬНОЕ ВРЕМЯ');}
 function resetGame(){if(!confirm('СБРОСИТЬ ВЕСЬ ПРОГРЕСС?'))return;localStorage.removeItem(SAVE_KEY);location.reload();}
 /* ================= GAME LOOP ================= */
@@ -316,7 +316,7 @@ function renderChain(){let h='';
  h+=S.vassals.length?S.vassals.map(v=>chainNodeHTML(v,1)).join(''):'<div class="mini" style="padding:10px 0">цепь пуста — купи узлы на рынке или пригласи игроков</div>';
  h+=`<div class="panel" style="margin-top:14px"><div class="ptitle">ИНВАЙТ · ПРИГЛАШЕНО ${S.refCount}</div>
   <div class="mini">перешедший по ссылке автоматически станет твоим вассалом</div>
-  <div class="refBox"><div class="link">t.me/thecagebot?start=ref_${S.refCode}</div><button class="fbtn" style="flex:0 0 auto;padding:10px 14px" onclick="copyRef()">КОПИЯ</button></div>
+  <div class="refBox"><div class="link">t.me/TheCageGameBot?start=ref_${S.refCode}</div><button class="fbtn" style="flex:0 0 auto;padding:10px 14px" onclick="copyRef()">КОПИЯ</button></div>
   <div class="fbtns" style="margin-top:8px"><button class="fbtn primary" style="padding:11px" onclick="shareRef()">➤ ПОДЕЛИТЬСЯ В TELEGRAM</button><button class="fbtn grn" style="padding:11px" onclick="simInvite()">SIM: ПРИГЛАСИТЬ</button></div></div>`;
  document.getElementById('scr-chain').innerHTML=h;}
 function renderProfile(){const st=S.stats;
