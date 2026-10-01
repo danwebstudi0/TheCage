@@ -200,6 +200,14 @@ const SHIELDS=[
 const LORDS=['NULLPOINTER','SYND1KAT','OV3RLORD','DARKNODE','KASSANDRA_0','R00TK1T','V0IDRUNNER','0BSERVER','M0N0L1T','HEXFATHER'];
 const BOTNAMES=['n3m0','kr1pt0','gh05t','byt3r','v0id','snark','hex3d','m0rph','dusk','l0g1c','rax','nyx','p1xel','sly','0tus','f3rrum','quark','z3ta','umbra','k1l0'];
 const SAVE_KEY='thecage_save_v1';
+  const SUPABASE_URL='https://onjtrzpcehdjhutxfqby.supabase.co';
+const SUPABASE_KEY='sb_publishable_K705CYyjxaP7bc0F-uL3cg_y6PD5F92';
+
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const tg=window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
 const H=3600000;
 /* ================= STATE ================= */
 function rnd(a,b){return a+Math.random()*(b-a)}
