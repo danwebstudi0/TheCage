@@ -1,5 +1,4 @@
-<script>
- <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -204,7 +203,6 @@ async function syncPlayer(){
  return data;
 }
 
-
 /* ================= REFERRAL ================= */
 
 async function processReferral(){
@@ -236,10 +234,7 @@ async function processReferral(){
      return;
    }
 
-   /* уже есть хозяин */
    if(me?.vassal_of)return;
-
-   /* ищем владельца реферального кода */
 
    const {data:owner,error:ownerError}=await sb
      .from('players')
@@ -257,14 +252,10 @@ async function processReferral(){
      return;
    }
 
-   /* нельзя пригласить самого себя */
-
    if(String(owner.id)===String(id)){
      console.log('Самореферал запрещён');
      return;
    }
-
-   /* назначаем владельца */
 
    const {error:updateError}=await sb
      .from('players')
@@ -278,8 +269,6 @@ async function processReferral(){
      console.error('Referral update error:',updateError);
      return;
    }
-
-   /* локально показываем владельца */
 
    S.owner={
      name:owner.username || 'Игрок',
@@ -310,7 +299,6 @@ async function processReferral(){
  }
 }
 
-
 /* ================= DATABASE DATA ================= */
 
 async function loadRealMarket(){
@@ -337,28 +325,20 @@ async function loadRealMarket(){
  S.bots=(data||[]).map(p=>({
 
    id:String(p.id),
-
    name:p.username || 'Игрок',
-
    income:Number(p.income||10),
-
    market_value:Number(
      p.market_value ||
      Math.max(240,Number(p.income||10)*24)
    ),
-
    shielded:false,
-
    shieldUntil:0,
-
    degraded:false,
-
    subs:[]
  }));
 
  renderMarket();
 }
-
 
 /* ================= ECONOMY ================= */
 
@@ -477,7 +457,6 @@ function pendingCollect(){
  return totalIncome()/H*elapsed;
 }
 
-
 /* ================= HELPERS ================= */
 
 function fmt(n){
@@ -536,19 +515,6 @@ function toast(msg,kind){
  );
 }
 
-function log(type,amount,note){
-
- S.journal.unshift({
-   t:S.v,
-   type,
-   amount:Math.round(amount),
-   note
- });
-
- if(S.journal.length>40)
-   S.journal.pop();
-}
-
 let AC=null;
 
 function beep(f){
@@ -583,7 +549,6 @@ function beep(f){
 
  }catch(e){}
 }
-
 
 /* ================= ACTIONS ================= */
 
@@ -649,7 +614,6 @@ function collect(){
  render();
 }
 
-
 function buyCard(key){
 
  const c=card(key);
@@ -687,7 +651,6 @@ function buyCard(key){
 
  render();
 }
-
 
 function upgradeFarm(i){
 
@@ -727,7 +690,6 @@ function upgradeFarm(i){
  render();
 }
 
-
 function resetHeat(i){
 
  const f=S.farms[i];
@@ -749,7 +711,6 @@ function resetHeat(i){
 
  render();
 }
-
 
 function resetAllHeat(){
 
@@ -784,7 +745,6 @@ function resetAllHeat(){
  render();
 }
 
-
 /* ================= REAL PLAYER PURCHASE ================= */
 
 async function buyBot(id){
@@ -816,11 +776,6 @@ async function buyBot(id){
 
  try{
 
-   /*
-    сначала проверяем,
-    что игрок ещё свободен
-   */
-
    const {data:target,error:targetError}=
      await sb
        .from('players')
@@ -846,11 +801,6 @@ async function buyBot(id){
      return;
    }
 
-   /*
-    назначаем текущего игрока
-    владельцем выбранного игрока
-   */
-
    const {error:updateError}=
      await sb
        .from('players')
@@ -865,11 +815,6 @@ async function buyBot(id){
      toast('НЕ УДАЛОСЬ КУПИТЬ ИГРОКА','bad');
      return;
    }
-
-   /*
-    только после успешной базы
-    списываем деньги локально
-   */
 
    S.balance-=price;
 
@@ -916,7 +861,6 @@ async function buyBot(id){
  }
 }
 
-
 /* ================= RANSOM ================= */
 
 function ransom(){
@@ -945,11 +889,6 @@ function ransom(){
    'освобождение от @'+
    S.owner.name
  );
-
- /*
-  освобождаем игрока
-  и на сервере
- */
 
  const id=playerId();
 
@@ -988,7 +927,6 @@ function ransom(){
 
  render();
 }
-
 
 /* ================= SHIELD ================= */
 
@@ -1057,7 +995,6 @@ function buyShield(t){
  render();
 }
 
-
 /* ================= REFERRAL UI ================= */
 
 function simInvite(){
@@ -1067,7 +1004,6 @@ function simInvite(){
    'bad'
  );
 }
-
 
 function copyRef(){
 
@@ -1092,7 +1028,6 @@ function copyRef(){
  }
 }
 
-
 function shareRef(){
 
  const link=
@@ -1109,7 +1044,6 @@ function shareRef(){
 
  window.open(url,'_blank');
 }
-
 
 /* ================= SPEED ================= */
 
@@ -1142,7 +1076,6 @@ function toggleSpeed(){
  );
 }
 
-
 /* ================= RESET ================= */
 
 async function resetGame(){
@@ -1157,21 +1090,12 @@ async function resetGame(){
 
    if(id){
 
-     /*
-      сначала освобождаем
-      всех наших вассалов
-     */
-
      await sb
        .from('players')
        .update({
          vassal_of:null
        })
        .eq('vassal_of',id);
-
-     /*
-      сбрасываем самого игрока
-     */
 
      await sb
        .from('players')
@@ -1199,7 +1123,6 @@ async function resetGame(){
 
  location.reload();
 }
-
 
 /* ================= RAID ================= */
 
@@ -1234,7 +1157,6 @@ function doRaid(){
  beep(200);
 }
 
-
 /* ================= GAME LOOP ================= */
 
 async function tick(){
@@ -1266,11 +1188,6 @@ async function tick(){
        );
    }
  });
-
- /*
-  реальный рынок обновляем
-  каждые 30 секунд интерфейса
- */
 
  if(
    S.v-
@@ -1308,26 +1225,13 @@ async function tick(){
  render();
 }
 
-
-/* ================= START DATABASE ================= */
-
 async function startDatabase(){
 
  try{
 
    await syncPlayer();
 
-   /*
-    сначала создаём игрока,
-    потом обрабатываем реферал
-   */
-
    await processReferral();
-
-   /*
-    после реферала
-    загружаем настоящий рынок
-   */
 
    await loadRealMarket();
 
@@ -1339,7 +1243,6 @@ async function startDatabase(){
    );
  }
 }
-
 
 /* ================= TIMERS ================= */
 
@@ -1370,7 +1273,6 @@ window.addEventListener(
  save
 );
 
-
 /* ================= RENDER ================= */
 
 function go(t){
@@ -1397,7 +1299,6 @@ function go(t){
  render();
 }
 
-
 function render(){
 
  renderHeader();
@@ -1406,7 +1307,6 @@ function render(){
  renderChain();
  renderProfile();
 }
-
 
 function renderHeader(){
 
@@ -1445,7 +1345,6 @@ function renderHeader(){
      'БЕЗ ЗАЩИТЫ';
  }
 }
-
 
 /* ================= FARM CARD ================= */
 
@@ -1538,7 +1437,6 @@ function farmCardHTML(f,i){
 
  </div>`;
 }
-
 
 /* ================= TERMINAL ================= */
 
@@ -1779,7 +1677,6 @@ function renderTerminal(){
    .innerHTML=h;
 }
 
-
 /* ================= MARKET ================= */
 
 function botCardHTML(b){
@@ -1843,7 +1740,6 @@ function botCardHTML(b){
 
  </div>`;
 }
-
 
 function renderMarket(){
 
@@ -1928,7 +1824,6 @@ function renderMarket(){
    .innerHTML=h;
 }
 
-
 /* ================= CHAIN ================= */
 
 function chainNodeHTML(n,lvl){
@@ -1973,7 +1868,6 @@ function chainNodeHTML(n,lvl){
 
  </div>`;
 }
-
 
 function renderChain(){
 
@@ -2199,7 +2093,6 @@ function renderChain(){
    )
    .innerHTML=h;
 }
-
 
 /* ================= PROFILE ================= */
 
@@ -2428,7 +2321,6 @@ function renderProfile(){
    .innerHTML=h;
 }
 
-
 /* ================= BOOT ================= */
 
 (function(){
@@ -2495,7 +2387,6 @@ function renderProfile(){
    );
 
 })();
-
 
 /* ================= START ================= */
 
