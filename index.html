@@ -836,7 +836,7 @@ const LORDS=[
  'R00TK1T','V0IDRUNNER','0BSERVER','M0N0L1T','HEXFATHER'
 ];
 
-const SAVE_KEY='thecage_save_v1';
+const SAVE_KEY='thecage_save_v2';
 
 const SUPABASE_URL='https://onjtrzpcehdjhutxfqby.supabase.co';
 const SUPABASE_KEY='sb_publishable_K705CYyjxaP7bc0F-uL3cg_y6PD5F92';
@@ -2557,23 +2557,7 @@ async function startDatabase(){
 
    await syncPlayer();
 
-   await processReferral();
-
-   await loadMyRelations();
-
-   await loadRealMarket();
-
-   render();
-
- }catch(e){
-
-   console.error(
-     'Database startup error:',
-     e
-   );
- }
-}
-
+  
 /* ================= NAVIGATION ================= */
 
 function go(t){
