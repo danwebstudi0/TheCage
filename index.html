@@ -3431,115 +3431,81 @@ function doRaid(){
 }
 
 
+```js
 /* ================= REWARDED ADS (CC-DROP) ================= */
 
-const ADS_MAX=8;
+const ADS_MAX = 8;
 
 function todayKey(){
- const d=new Date();
- return d.getFullYear()+'-'+
-   String(d.getMonth()+1).padStart(2,'0')+'-'+
-   String(d.getDate()).padStart(2,'0');
+  const d = new Date();
+
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
 
 function ensureAds(){
 
- if(!S.ads||typeof S.ads!=='object')
-   S.ads={day:'',used:0};
+  if(!S.ads || typeof S.ads !== 'object')
+    S.ads = { day:'', used:0 };
 
- if(typeof S.ads.used!=='number')
-   S.ads.used=0;
+  if(typeof S.ads.used !== 'number')
+    S.ads.used = 0;
 
- if(S.ads.day!==todayKey()){
-   S.ads.day=todayKey();
-   S.ads.used=0;
- }
+  if(S.ads.day !== todayKey()){
+    S.ads.day = todayKey();
+    S.ads.used = 0;
+  }
 }
 
 function adsLeft(){
- ensureAds();
- return Math.max(0,ADS_MAX-S.ads.used);
+  ensureAds();
+  return Math.max(0, ADS_MAX - S.ads.used);
 }
 
-/* ТЕКУЩАЯ стоимость монеты CC — всегда из экономики игры.
-   Никаких захардкоженных сумм: берём рыночную стоимость игрока
-   (доход/час × 24), она растёт вместе с прогрессом. */
+/* Текущая стоимость монеты CC */
 function ccCoinValue(){
- return Math.max(1,Math.round(myValue()));
+  return Math.max(1, Math.round(myValue()));
 }
 
-/*
-  ПРОВАЙДЕР РЕКЛАМЫ.
+/* ================= ADSGRAM REWARDED ADS ================= */
 
-  Сейчас подключена тестовая заглушка (3 секунды фейковой рекламы).
+const AdProvider = {
+  name: 'ADSGRAM',
 
-  Чтобы подключить реальную Rewarded Ad сеть позже —
-  замени тело showRewarded() на вызов SDK (Adsgram, Telegram и т.п.):
+  async showRewarded(){
 
-    showRewarded(){
-      return new Promise(resolve=>{
-        AdSDK.show({
-          onRewarded:()=>resolve(true),
-          onClose:()=>resolve(false),
-          onError:()=>resolve(false)
-        });
+    try{
+
+      if(!window.Adsgram){
+        console.error('AdsGram SDK не найден');
+        return false;
+      }
+
+      const AdController = window.Adsgram.init({
+        blockId: '51572'
       });
+
+      if(!AdController){
+        console.error('AdsGram AdController не создан');
+        return false;
+      }
+
+      await AdController.show();
+
+      // Реклама успешно показана
+      return true;
+
+    }catch(error){
+
+      console.error('AdsGram Rewarded Ad error:', error);
+
+      // Ошибка или закрытие без успешного завершения
+      return false;
     }
-
-  resolve(true)  — реклама досмотрена, начисляем награду;
-  resolve(false) — отмена/ошибка, попытка НЕ тратится.
-*/
-const AdProvider={
- name:'TEST_STUB',
- showRewarded(){
-   return new Promise(resolve=>{
-     showTestAd(resolve);
-   });
- }
+  }
 };
-
-function showTestAd(done){
-
- const ov=document.createElement('div');
-
- ov.className='adTest';
-
- ov.innerHTML=
-   '<div class="adTestCard">'+
-     '<div class="adTestTag">РЕКЛАМА · ТЕСТОВЫЙ РЕЖИМ</div>'+
-     '<div class="adTestSpin"></div>'+
-     '<div class="adTestCount" id="adTestCount">3</div>'+
-     '<div class="adTestNote">здесь будет Rewarded Ad</div>'+
-   '</div>';
-
- document.body.appendChild(ov);
-
- let n=3;
-
- const iv=setInterval(
-   ()=>{
-
-     n--;
-
-     const c=
-       document.getElementById(
-         'adTestCount'
-       );
-
-     if(c)
-       c.textContent=n;
-
-     if(n<=0){
-       clearInterval(iv);
-       ov.remove();
-       done(true);
-     }
-
-   },
-   1000
- );
-}
-
+```
 /* ---------- СЦЕНА С МОНЕТОЙ ---------- */
 
 const CCScene={
