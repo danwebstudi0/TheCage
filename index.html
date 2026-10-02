@@ -1198,7 +1198,7 @@ function defaultState(){
    owner:null,
 
    immunity:0,
-   shieldUntil:now+24*H,
+   shieldUntil:now+1*H,
    shieldTier:'NOVICE',
    shieldCd:0,
    allCd:0,
@@ -1293,7 +1293,7 @@ function load(){
        s.lastCollect=Date.now();
 
      if(typeof s.shieldUntil!=='number')
-       s.shieldUntil=Date.now()+24*H;
+       s.shieldUntil=Date.now()+1*H;
 
      if(typeof s.shieldCd!=='number')
        s.shieldCd=0;
@@ -1589,7 +1589,7 @@ function ransomCost(){
  if(!S.owner)
    return 0;
 
- const hrs=(S.v-S.owner.since)/H;
+ const hrs=(Date.now()-S.owner.since)/H;
 
  return Math.round(
    S.owner.price*
@@ -1610,13 +1610,177 @@ function pendingCollect(){
  const elapsed=
    Math.min(
      Math.max(
-       S.v-S.lastCollect,
+       Date.now()-S.lastCollect,
        0
      ),
      12*H
    );
 
  return totalIncome()/H*elapsed;
+}
+
+/* ================= SERVER TIME & OFFLINE INCOME ================= */
+
+/* реальное серверное время Supabase (по HTTP-заголовку Date),
+   с кэшем 5 секунд; при сбое — локальное время */
+let SERVER_TIME_OFF=0;
+let serverTimeAt=0;
+
+async function serverTime(){
+
+ const now=Date.now();
+
+ if(now-serverTimeAt<5000)
+   return now+SERVER_TIME_OFF;
+
+ serverTimeAt=now;
+
+ try{
+
+   const r=
+     await fetch(
+       SUPABASE_URL+'/rest/v1/players?select=id&limit=1',
+       {
+         headers:{
+           apikey:SUPABASE_KEY,
+           Authorization:'Bearer '+SUPABASE_KEY
+         }
+       }
+     );
+
+   const d=r.headers.get('Date');
+
+   if(d){
+
+     const t=new Date(d).getTime();
+
+     if(isFinite(t))
+       SERVER_TIME_OFF=t-Date.now();
+   }
+
+ }catch(e){}
+
+ return Date.now()+SERVER_TIME_OFF;
+}
+
+/* ПАССИВНЫЙ ДОХОД — серверное начисление.
+   Капает постоянно, даже когда игрок офлайн:
+   дельта считается от серверного last_collect,
+   кап — 12 часов. Налог 25% хозяину вычитается. */
+async function syncIncomeServer(){
+
+ const id=playerId();
+
+ if(!id)
+   return 0;
+
+ try{
+
+   const now=await serverTime();
+
+   const {data:me,error}=
+     await sb
+       .from('players')
+       .select(
+         'coins,income,last_collect,vassal_of'
+       )
+       .eq('id',id)
+       .maybeSingle();
+
+   if(error||!me)
+     return 0;
+
+   /* первая регистрация — ставим базовые значения */
+   if(me.last_collect==null){
+
+     await sb
+       .from('players')
+       .update({
+         coins:Math.floor(S.balance),
+         last_collect:now,
+         income:Math.floor(totalIncome()),
+         market_value:Math.floor(myValue())
+       })
+       .eq('id',id);
+
+     S.lastCollect=Date.now();
+
+     return 0;
+   }
+
+   const last=Number(me.last_collect);
+
+   const elapsed=
+     Math.min(
+       Math.max(now-last,0),
+       12*H
+     );
+
+   const inc=Number(me.income||0);
+
+   const gross=inc/H*elapsed;
+
+   let tax=0;
+
+   if(me.vassal_of)
+     tax=gross*.25;
+
+   const net=Math.max(0,gross-tax);
+
+   const coins=
+     Math.max(
+       0,
+       Number(me.coins||0)+net
+     );
+
+   await sb
+     .from('players')
+     .update({
+       coins:Math.floor(coins),
+       last_collect:now
+     })
+     .eq('id',id);
+
+   S.balance=Math.floor(coins);
+   S.lastCollect=Date.now();
+
+   S.stats.collected+=net;
+
+   if(tax>0)
+     S.stats.taxesPaid+=tax;
+
+   return net;
+
+ }catch(e){
+
+   console.error(
+     'Income sync error:',
+     e
+   );
+
+   return 0;
+ }
+}
+
+/* фиксация баланса на сервере после трат/начислений */
+async function persistCoins(){
+
+ const id=playerId();
+
+ if(!id)
+   return;
+
+ try{
+
+   await sb
+     .from('players')
+     .update({
+       coins:Math.floor(S.balance),
+       last_collect:Date.now()
+     })
+     .eq('id',id);
+
+ }catch(e){}
 }
 
 /* ================= SUPABASE ================= */
@@ -1630,21 +1794,57 @@ async function syncPlayer(){
 
  try{
 
-   const {data,error}=
+   /* существующую запись только обновляем —
+      coins/last_collect не трогаем, чтобы не
+      затирать серверный пассивный доход */
+   const {data:exist}=
      await sb
        .from('players')
-       .upsert({
-         id:id,
-         username:playerName(),
-         ref_code:S.refCode,
-         coins:Math.floor(S.balance),
-         income:Math.floor(totalIncome()),
-         market_value:Math.floor(myValue())
-       },{
-         onConflict:'id'
-       })
-       .select()
-       .single();
+       .select('id')
+       .eq('id',id)
+       .maybeSingle();
+
+   let data=null;
+   let error=null;
+
+   if(exist){
+
+     const r=
+       await sb
+         .from('players')
+         .update({
+           username:playerName(),
+           ref_code:S.refCode,
+           income:Math.floor(totalIncome()),
+           market_value:Math.floor(myValue())
+         })
+         .eq('id',id)
+         .select()
+         .single();
+
+     data=r.data;
+     error=r.error;
+
+   }else{
+
+     const r=
+       await sb
+         .from('players')
+         .insert({
+           id:id,
+           username:playerName(),
+           ref_code:S.refCode,
+           coins:Math.floor(S.balance),
+           income:Math.floor(totalIncome()),
+           market_value:Math.floor(myValue()),
+           last_collect:Date.now()
+         })
+         .select()
+         .single();
+
+     data=r.data;
+     error=r.error;
+   }
 
    if(error){
 
@@ -2066,7 +2266,7 @@ async function processReferral(){
      await sb
        .from('players')
        .select(
-         'id,vassal_of'
+         'id,vassal_of,shield_until'
        )
        .eq(
          'id',
@@ -2079,6 +2279,21 @@ async function processReferral(){
      console.error(
        'Referral me error:',
        meError
+     );
+
+     return;
+   }
+
+   /* АКТИВНЫЙ ЩИТ — стать вассалом нельзя
+      (в том числе в первый час новичка) */
+   if(
+     Number(me?.shield_until||0)>
+     await serverTime()
+   ){
+
+     toast(
+       '🛡 ЩИТ АКТИВЕН · ВАССАЛОМ СТАНОВИТЬСЯ НЕЛЬЗЯ',
+       'bad'
      );
 
      return;
@@ -2156,7 +2371,7 @@ async function processReferral(){
        240
      ),
 
-     since:S.v
+     since:Date.now()
    };
 
    log(
@@ -2372,77 +2587,94 @@ async function loadRealMarket(){
 
 /* ================= ACTIONS ================= */
 
-function collect(){
+async function collect(){
 
- const p=pendingCollect();
+ const id=playerId();
 
- if(p<1)return;
+ /* гость без Telegram — локальное начисление */
+ if(!id){
 
- const elapsed=
-   Math.min(
-     Math.max(
-       S.v-S.lastCollect,
-       0
-     ),
-     12*H
-   );
+   const p=pendingCollect();
 
- const personal=personalIncome();
- const tax=taxIncome();
+   if(p<1)return;
 
- const gross=
-   (personal+tax)/
-   H*
-   elapsed;
-
- let taxPay=0;
-
- if(S.owner&&totalIncome()>0){
-
-   taxPay=
-     gross*
-     (
-       personal/
-       totalIncome()
-     )*
-     .25;
- }
-
- const net=
-   Math.max(
-     0,
-     gross-taxPay
-   );
-
- S.balance+=net;
-
- S.stats.collected+=net;
-
- if(totalIncome()>0){
-
-   S.stats.taxesEarned+=
-     gross*
-     (
-       tax/
-       totalIncome()
+   const elapsed=
+     Math.min(
+       Math.max(
+         Date.now()-S.lastCollect,
+         0
+       ),
+       12*H
      );
+
+   const gross=totalIncome()/H*elapsed;
+
+   let tax=0;
+
+   if(S.owner)
+     tax=gross*.25;
+
+   const net=Math.max(0,gross-tax);
+
+   S.balance+=net;
+
+   S.stats.collected+=net;
+   S.stats.taxesPaid+=tax;
+
+   S.lastCollect=Date.now();
+
+   log(
+     'COLLECT',
+     net,
+     S.owner?
+     'налог хозяину −'+fmt(tax):
+     ''
+   );
+
+   toast(
+     '+'+
+     fmt(net)+
+     ' C₵ СОБРАНО',
+     'good'
+   );
+
+   beep(880);
+
+   save();
+   render();
+
+   return;
  }
 
- S.stats.taxesPaid+=taxPay;
+ /* серверное начисление: доход капал,
+    пока игрок был офлайн (кап 12ч) */
+ const got=await syncIncomeServer();
 
- S.lastCollect=S.v;
+ if(got<1){
+
+   toast(
+     'ПОКА НЕЧЕГО СОБИРАТЬ',
+     'bad'
+   );
+
+   render();
+
+   return;
+ }
+
+ persistCoins();
 
  log(
    'COLLECT',
-   net,
+   got,
    S.owner?
-   'налог хозяину −'+fmt(taxPay):
+   'налог хозяину удержан':
    ''
  );
 
  toast(
    '+'+
-   fmt(net)+
+   fmt(got)+
    ' C₵ СОБРАНО',
    'good'
  );
@@ -2450,9 +2682,6 @@ function collect(){
  beep(880);
 
  save();
-
- syncPlayer();
-
  render();
 }
 
@@ -2473,6 +2702,8 @@ function buyCard(key){
  }
 
  S.balance-=c.price;
+
+ persistCoins();
 
  S.farms.push({
    key,
@@ -2531,6 +2762,8 @@ function upgradeFarm(i){
  }
 
  S.balance-=cost;
+
+ persistCoins();
 
  f.lvl++;
 
@@ -2640,6 +2873,9 @@ async function buyBot(id){
 
  if(!b)return;
 
+ /* подтягиваем серверный баланс перед покупкой */
+ await syncIncomeServer();
+
  const price=botPrice(b);
 
  if(S.balance<price){
@@ -2671,7 +2907,7 @@ async function buyBot(id){
      await sb
        .from('players')
        .select(
-         'id,username,income,market_value,vassal_of'
+         'id,username,income,market_value,vassal_of,shield_until'
        )
        .eq(
          'id',
@@ -2707,6 +2943,26 @@ async function buyBot(id){
 
      toast(
        'ЭТОТ ИГРОК УЖЕ В ЦЕПИ',
+       'bad'
+     );
+
+     await loadRealMarket();
+
+     return;
+   }
+
+   /* АКТИВНЫЙ ЩИТ — покупка запрещена.
+      Проверка по серверному времени, работает
+      даже когда цель офлайн. */
+   const nowS=await serverTime();
+
+   if(Number(target.shield_until||0)>nowS){
+
+     toast(
+       '🛡 ИГРОК ПОД ЗАЩИТОЙ · ЕЩЁ '+
+       fmtT(
+         Number(target.shield_until)-nowS
+       ),
        'bad'
      );
 
@@ -2764,6 +3020,8 @@ async function buyBot(id){
    }
 
    S.balance-=price;
+
+   persistCoins();
 
    S.vassals.push({
      id:String(target.id),
@@ -2879,6 +3137,8 @@ async function ransom(){
 
  S.balance-=cost;
 
+ persistCoins();
+
  log(
    'RANSOM',
    -cost,
@@ -2889,11 +3149,11 @@ async function ransom(){
  S.owner=null;
 
  S.immunity=
-   S.v+
+   Date.now()+
    5*H;
 
  S.nextRaid=
-   S.v+
+   Date.now()+
    rnd(3,7)*H;
 
  S.stats.ransoms++;
@@ -2930,11 +3190,11 @@ function buyShield(t){
 
  if(!sh)return;
 
- if(S.v<S.shieldCd){
+ if(Date.now()<S.shieldCd){
 
    toast(
      'КУЛДАУН ЩИТА '+
-     fmtT(S.shieldCd-S.v),
+     fmtT(S.shieldCd-Date.now()),
      'bad'
    );
 
@@ -2959,14 +3219,16 @@ function buyShield(t){
 
  S.balance-=cost;
 
+ persistCoins();
+
  S.shieldTier=sh.label;
 
  S.shieldUntil=
-   S.v+
+   Date.now()+
    sh.h*H;
 
  S.shieldCd=
-   S.v+
+   Date.now()+
    6*H;
 
  S.stats.shields=(S.stats.shields||0)+1;
@@ -3125,11 +3387,11 @@ function doRaid(){
    id:null,
    name:pick(LORDS),
    price:myValue(),
-   since:S.v
+   since:Date.now()
  };
 
  S.nextRaid=
-   S.v+
+   Date.now()+
    rnd(3,7)*H;
 
  S.stats.raids++;
@@ -3610,6 +3872,8 @@ function ccGrant(v,kind){
 
  S.balance+=amount;
  S.stats.collected+=amount;
+
+ persistCoins();
  S.stats.adRewards=(S.stats.adRewards||0)+1;
 
  if(kind==='ad')
@@ -3785,6 +4049,8 @@ function claimDaily(){
 
  S.balance+=r;
  S.stats.collected+=r;
+
+ persistCoins();
 
  log(
    'DAILY',
@@ -4397,12 +4663,12 @@ async function tick(){
  }
 
  const unprotected=
-   S.v>S.shieldUntil&&
-   S.v>S.immunity;
+   Date.now()>S.shieldUntil&&
+   Date.now()>S.immunity;
 
  if(
    unprotected&&
-   S.v>S.nextRaid&&
+   Date.now()>S.nextRaid&&
    personalIncome()>=30
  ){
 
@@ -4413,7 +4679,7 @@ async function tick(){
    }else{
 
      S.nextRaid=
-       S.v+
+       Date.now()+
        H;
    }
  }
@@ -4450,6 +4716,8 @@ async function startDatabase(){
  try{
 
    await syncPlayer();
+
+   await syncIncomeServer();
 
    /*
       ВАЖНО:
@@ -4580,7 +4848,7 @@ function renderHeader(){
 
  if(!shield)return;
 
- if(S.v<S.shieldUntil){
+ if(Date.now()<S.shieldUntil){
 
    shield.className='hstat';
 
@@ -4589,7 +4857,7 @@ function renderHeader(){
      S.shieldTier+
      ' '+
      fmtT(
-       S.shieldUntil-S.v
+       S.shieldUntil-Date.now()
      );
 
  }else{
@@ -4770,7 +5038,7 @@ function renderTerminal(){
        ${fmtT(
          Math.min(
            Math.max(
-             S.v-S.lastCollect,
+             Date.now()-S.lastCollect,
              0
            ),
            12*H
@@ -5241,15 +5509,15 @@ function renderChain(){
 
      ◈ СВОБОДЕН ·
      ${
-       S.v<S.immunity?
+       Date.now()<S.immunity?
 
        'иммунитет '+
        fmtT(
-         S.immunity-S.v
+         S.immunity-Date.now()
        ):
 
        (
-         S.v<S.shieldUntil?
+         Date.now()<S.shieldUntil?
          'щит активен':
          'БЕЗ ЗАЩИТЫ — тебя могут купить'
        )
@@ -5371,19 +5639,19 @@ function renderProfile(){
 
      ЗАЩИТА УЗЛА ·
      ${
-       S.v<S.shieldUntil?
+       Date.now()<S.shieldUntil?
        '🛡 '+
        S.shieldTier+
        ' '+
        fmtT(
-         S.shieldUntil-S.v
+         S.shieldUntil-Date.now()
        ):
        'НЕАКТИВНА'
      }
 
    </div>`;
 
- if(S.v<S.shieldCd){
+ if(Date.now()<S.shieldCd){
 
    h+=`
 
@@ -5396,7 +5664,7 @@ function renderProfile(){
 
      кулдаун щитов:
      ${fmtT(
-       S.shieldCd-S.v
+       S.shieldCd-Date.now()
      )}
 
    </div>`;
@@ -5432,7 +5700,7 @@ function renderProfile(){
          class="buyBtn"
          ${
            S.balance<cost||
-           S.v<S.shieldCd?
+           Date.now()<S.shieldCd?
            'disabled':
            ''
          }
@@ -5805,7 +6073,7 @@ function renderProfile(){
    '> Supabase connection.......READY',
    '> реестр игроков............READY',
    '> рынок реальных игроков....READY',
-   '> щит новичка активирован...24Ч',
+   '> щит новичка активирован...1Ч',
    '> ДОБРО ПОЖАЛОВАТЬ В ЦЕПЬ, ОПЕРАТОР'
  ];
 
@@ -5881,7 +6149,9 @@ setInterval(
 setInterval(
  ()=>{
    save();
-   syncPlayer();
+   syncIncomeServer().then(
+     ()=>syncPlayer()
+   );
  },
  10000
 );
