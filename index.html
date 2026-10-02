@@ -3445,9 +3445,8 @@ function todayKey(){
 }
 
 function ensureAds(){
-
   if(!S.ads || typeof S.ads !== 'object')
-    S.ads = { day:'', used:0 };
+    S.ads = {day:'', used:0};
 
   if(typeof S.ads.used !== 'number')
     S.ads.used = 0;
@@ -3463,20 +3462,17 @@ function adsLeft(){
   return Math.max(0, ADS_MAX - S.ads.used);
 }
 
-/* Текущая стоимость монеты CC */
 function ccCoinValue(){
   return Math.max(1, Math.round(myValue()));
 }
 
-/* ================= ADSGRAM REWARDED ADS ================= */
+/* ================= ADSGRAM ================= */
 
 const AdProvider = {
   name: 'ADSGRAM',
 
   async showRewarded(){
-
     try{
-
       if(!window.Adsgram){
         console.error('AdsGram SDK не найден');
         return false;
@@ -3493,19 +3489,13 @@ const AdProvider = {
 
       await AdController.show();
 
-      // Реклама успешно показана
       return true;
-
     }catch(error){
-
       console.error('AdsGram Rewarded Ad error:', error);
-
-      // Ошибка или закрытие без успешного завершения
       return false;
     }
   }
 };
-```
 /* ---------- СЦЕНА С МОНЕТОЙ ---------- */
 
 const CCScene={
