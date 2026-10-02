@@ -74,6 +74,242 @@ button:disabled{
   padding-bottom:80px;
 }
 
+
+/* DESKTOP LAYOUT */
+
+@media(min-width:960px){
+  #app{max-width:1240px}
+  .nav{max-width:1240px}
+  .farmGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .shopStrip{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media(min-width:1360px){
+  .farmGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .shopStrip{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+/* FULLSCREEN BUTTON */
+
+#fsBtn{
+  display:none;
+  position:fixed;
+  left:12px;
+  bottom:72px;
+  z-index:60;
+  border:1px solid #303044;
+  background:#0b0b12;
+  color:#9ca3af;
+  padding:9px 11px;
+  font:bold 10px monospace;
+}
+
+#fsBtn.on{
+  color:var(--orange);
+  border-color:rgba(245,158,11,.5);
+}
+
+@media(hover:hover) and (pointer:fine){
+  #fsBtn{display:block}
+}
+
+/* CC-DROP SCENE */
+
+#ccScene{
+  position:fixed;
+  inset:0;
+  z-index:1500;
+  display:none;
+  background:radial-gradient(ellipse at center,rgba(6,26,14,.55),rgba(3,5,8,.88));
+}
+
+#ccScene.on{
+  display:block;
+}
+
+#ccStage{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+}
+
+#ccCoin{
+  position:absolute;
+  left:0;
+  top:0;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font:bold 22px monospace;
+  color:#052e12;
+  background:radial-gradient(circle at 32% 28%,#bbf7d0,#22c55e 55%,#14532d);
+  box-shadow:
+    0 0 26px rgba(34,197,94,.55),
+    inset 0 0 0 3px rgba(255,255,255,.18);
+  will-change:transform;
+  z-index:1;
+}
+
+#ccCoin span{
+  text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+
+#ccOffer{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) scale(.92);
+  width:min(92vw,360px);
+  border:1px solid rgba(34,197,94,.45);
+  background:linear-gradient(180deg,#0a1510,#070b0d);
+  padding:18px;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .5s,transform .5s;
+  box-shadow:0 0 50px rgba(34,197,94,.2);
+  z-index:2;
+}
+
+#ccScene.offer #ccOffer{
+  opacity:1;
+  pointer-events:auto;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+.ccOfferTag{
+  color:#4ade80;
+  font:9px monospace;
+  letter-spacing:2px;
+  margin-bottom:12px;
+}
+
+.ccCoinBig{
+  width:56px;
+  height:56px;
+  margin:0 auto 10px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font:bold 20px monospace;
+  color:#052e12;
+  background:radial-gradient(circle at 32% 28%,#bbf7d0,#22c55e 55%,#14532d);
+  box-shadow:0 0 22px rgba(34,197,94,.5);
+}
+
+.ccValue{
+  color:#9ca3af;
+  font:8px monospace;
+  letter-spacing:1px;
+}
+
+.ccValueNum{
+  color:#4ade80;
+  font:bold 24px monospace;
+  margin:5px 0 14px;
+}
+
+#ccAdBtn{
+  width:100%;
+  border:1px solid rgba(34,197,94,.6);
+  background:linear-gradient(180deg,rgba(34,197,94,.28),rgba(34,197,94,.1));
+  color:#86efac;
+  padding:14px;
+  font:bold 12px monospace;
+}
+
+#ccAdBtn:not(:disabled){
+  animation:pulse 1.6s infinite;
+}
+
+#ccAdBtn b{
+  color:#bbf7d0;
+}
+
+#ccTakeBtn{
+  width:100%;
+  margin-top:8px;
+  border:1px solid var(--line);
+  background:#0d0d15;
+  color:#9ca3af;
+  padding:11px;
+  font:bold 10px monospace;
+}
+
+#ccTakeBtn b{
+  color:#d1d5db;
+}
+
+#ccTakeBtn .ccNoAd{
+  display:block;
+  color:#626276;
+  font:8px monospace;
+  margin-top:3px;
+}
+
+.ccHint{
+  margin-top:10px;
+  color:#626276;
+  font:8px monospace;
+}
+
+/* TEST AD STUB */
+
+.adTest{
+  position:fixed;
+  inset:0;
+  z-index:3000;
+  background:rgba(2,4,3,.93);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.adTestCard{
+  width:min(92vw,340px);
+  border:1px solid rgba(34,197,94,.4);
+  background:#0a120d;
+  padding:24px;
+  text-align:center;
+}
+
+.adTestTag{
+  color:var(--orange);
+  font:bold 9px monospace;
+  letter-spacing:2px;
+}
+
+.adTestSpin{
+  width:40px;
+  height:40px;
+  margin:16px auto;
+  border:3px solid #14532d;
+  border-top-color:#22c55e;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+.adTestCount{
+  color:#4ade80;
+  font:bold 28px monospace;
+  margin-top:6px;
+}
+
+.adTestNote{
+  color:var(--muted);
+  font:9px monospace;
+  margin-top:8px;
+}
+
 /* BOOT */
 
 #boot{
@@ -684,6 +920,7 @@ button:disabled{
   }
 }
 </style>
+<base target="_blank">
 </head>
 
 <body>
@@ -723,6 +960,10 @@ button:disabled{
       🛡 NOVICE
     </div>
 
+    <div id="hAds" class="hstat">
+      🎁 CC 8/8
+    </div>
+
   </div>
 
 </header>
@@ -740,8 +981,27 @@ button:disabled{
 
 <div id="toasts"></div>
 
+<div id="ccScene">
+  <div id="ccStage">
+    <div id="ccCoin"><span>C₵</span></div>
+  </div>
+  <div id="ccOffer">
+    <div class="ccOfferTag">CC-DROP · <span id="ccUsed">0/8</span></div>
+    <div class="ccCoinBig">C₵</div>
+    <div class="ccValue">ТЕКУЩАЯ СТОИМОСТЬ МОНЕТЫ</div>
+    <div class="ccValueNum" id="ccValueNum">0 C₵</div>
+    <button id="ccAdBtn" onclick="ccChoose('ad')">📺 ПОСМОТРЕТЬ РЕКЛАМУ · <b id="ccAdVal">+0</b></button>
+    <button id="ccTakeBtn" onclick="ccChoose('take')">🪙 ЗАБРАТЬ МОНЕТУ · <b id="ccTakeVal">+0</b><span class="ccNoAd">без рекламы · тратит 1 попытку</span></button>
+    <div class="ccHint">попытка <span id="ccCount">1</span>/8 · оба варианта тратят одну дневную попытку</div>
+  </div>
+</div>
+
 <button id="speedBtn" onclick="toggleSpeed()">
   ⚡ ×1
+</button>
+
+<button id="fsBtn" onclick="toggleFullscreen()">
+  ⛶ ПОЛНЫЙ ЭКРАН
 </button>
 
 <nav class="nav">
@@ -896,7 +1156,10 @@ function defaultState(){
      raids:0
    },
 
-   journal:[]
+   journal:[],
+
+   /* рекламные попытки дня (CC-drop) */
+   ads:{day:'',used:0}
  };
 }
 
@@ -960,6 +1223,12 @@ function load(){
 
      if(typeof s.refCount!=='number')
        s.refCount=0;
+
+     if(!s.ads||typeof s.ads!=='object')
+       s.ads={day:'',used:0};
+
+     if(typeof s.ads.used!=='number')
+       s.ads.used=0;
 
      return s;
    }
@@ -2566,6 +2835,528 @@ function doRaid(){
  beep(200);
 }
 
+
+/* ================= REWARDED ADS (CC-DROP) ================= */
+
+const ADS_MAX=8;
+
+function todayKey(){
+ const d=new Date();
+ return d.getFullYear()+'-'+
+   String(d.getMonth()+1).padStart(2,'0')+'-'+
+   String(d.getDate()).padStart(2,'0');
+}
+
+function ensureAds(){
+
+ if(!S.ads||typeof S.ads!=='object')
+   S.ads={day:'',used:0};
+
+ if(typeof S.ads.used!=='number')
+   S.ads.used=0;
+
+ if(S.ads.day!==todayKey()){
+   S.ads.day=todayKey();
+   S.ads.used=0;
+ }
+}
+
+function adsLeft(){
+ ensureAds();
+ return Math.max(0,ADS_MAX-S.ads.used);
+}
+
+/* ТЕКУЩАЯ стоимость монеты CC — всегда из экономики игры.
+   Никаких захардкоженных сумм: берём рыночную стоимость игрока
+   (доход/час × 24), она растёт вместе с прогрессом. */
+function ccCoinValue(){
+ return Math.max(1,Math.round(myValue()));
+}
+
+/*
+  ПРОВАЙДЕР РЕКЛАМЫ.
+
+  Сейчас подключена тестовая заглушка (3 секунды фейковой рекламы).
+
+  Чтобы подключить реальную Rewarded Ad сеть позже —
+  замени тело showRewarded() на вызов SDK (Adsgram, Telegram и т.п.):
+
+    showRewarded(){
+      return new Promise(resolve=>{
+        AdSDK.show({
+          onRewarded:()=>resolve(true),
+          onClose:()=>resolve(false),
+          onError:()=>resolve(false)
+        });
+      });
+    }
+
+  resolve(true)  — реклама досмотрена, начисляем награду;
+  resolve(false) — отмена/ошибка, попытка НЕ тратится.
+*/
+const AdProvider={
+ name:'TEST_STUB',
+ showRewarded(){
+   return new Promise(resolve=>{
+     showTestAd(resolve);
+   });
+ }
+};
+
+function showTestAd(done){
+
+ const ov=document.createElement('div');
+
+ ov.className='adTest';
+
+ ov.innerHTML=
+   '<div class="adTestCard">'+
+     '<div class="adTestTag">РЕКЛАМА · ТЕСТОВЫЙ РЕЖИМ</div>'+
+     '<div class="adTestSpin"></div>'+
+     '<div class="adTestCount" id="adTestCount">3</div>'+
+     '<div class="adTestNote">здесь будет Rewarded Ad</div>'+
+   '</div>';
+
+ document.body.appendChild(ov);
+
+ let n=3;
+
+ const iv=setInterval(
+   ()=>{
+
+     n--;
+
+     const c=
+       document.getElementById(
+         'adTestCount'
+       );
+
+     if(c)
+       c.textContent=n;
+
+     if(n<=0){
+       clearInterval(iv);
+       ov.remove();
+       done(true);
+     }
+
+   },
+   1000
+ );
+}
+
+/* ---------- СЦЕНА С МОНЕТОЙ ---------- */
+
+const CCScene={
+ active:false,
+ raf:null,
+ lastTs:0,
+ offerTo:null,
+ x:40,
+ y:80,
+ vx:180,
+ vy:150,
+ rot:0,
+ nextAt:Date.now()+rnd(45000,120000)
+};
+
+function ccSetText(id,t){
+ const e=document.getElementById(id);
+ if(e)e.textContent=t;
+}
+
+function ccSetValues(){
+
+ const v=ccCoinValue();
+ const t25=Math.max(1,Math.round(v*.25));
+
+ ccSetText(
+   'ccValueNum',
+   fmt(v)+' C₵'
+ );
+
+ ccSetText(
+   'ccAdVal',
+   '+'+fmt(v)+' C₵'
+ );
+
+ ccSetText(
+   'ccTakeVal',
+   '+'+fmt(t25)+' C₵'
+ );
+
+ ccSetText(
+   'ccUsed',
+   S.ads.used+'/'+ADS_MAX
+ );
+
+ ccSetText(
+   'ccCount',
+   Math.min(S.ads.used+1,ADS_MAX)
+ );
+}
+
+function ccSetButtons(on){
+ const a=document.getElementById('ccAdBtn');
+ const b=document.getElementById('ccTakeBtn');
+ if(a)a.disabled=!on;
+ if(b)b.disabled=!on;
+}
+
+function ccBounceLoop(ts){
+
+ if(!CCScene.active)
+   return;
+
+ const coin=document.getElementById('ccCoin');
+ const stage=document.getElementById('ccStage');
+
+ if(!coin||!stage)
+   return;
+
+ if(!CCScene.lastTs)
+   CCScene.lastTs=ts;
+
+ let dt=(ts-CCScene.lastTs)/1000;
+
+ CCScene.lastTs=ts;
+
+ if(dt>0.05)
+   dt=0.05;
+
+ if(dt<=0){
+   CCScene.raf=requestAnimationFrame(ccBounceLoop);
+   return;
+ }
+
+ const W=stage.clientWidth;
+ const H=stage.clientHeight;
+ const sz=coin.offsetWidth;
+
+ CCScene.x+=CCScene.vx*dt;
+ CCScene.y+=CCScene.vy*dt;
+ CCScene.rot+=260*dt;
+
+ let sx=1;
+ let sy=1;
+
+ if(CCScene.x<=0||CCScene.x>=W-sz){
+
+   CCScene.x=
+     Math.max(
+       0,
+       Math.min(W-sz,CCScene.x)
+     );
+
+   CCScene.vx*=-1;
+   sx=.82;
+   sy=1.14;
+ }
+
+ if(CCScene.y<=0||CCScene.y>=H-sz){
+
+   CCScene.y=
+     Math.max(
+       0,
+       Math.min(H-sz,CCScene.y)
+     );
+
+   CCScene.vy*=-1;
+   sx=1.14;
+   sy=.82;
+ }
+
+ coin.style.transform=
+   'translate('+CCScene.x+'px,'+CCScene.y+'px) '+
+   'rotate('+CCScene.rot+'deg) '+
+   'scale('+sx+','+sy+')';
+
+ CCScene.raf=requestAnimationFrame(ccBounceLoop);
+}
+
+function openCCScene(){
+
+ if(CCScene.active)
+   return;
+
+ ensureAds();
+
+ if(adsLeft()<=0)
+   return;
+
+ const scene=
+   document.getElementById('ccScene');
+
+ if(!scene)
+   return;
+
+ CCScene.active=true;
+ CCScene.lastTs=0;
+ CCScene.rot=0;
+
+ const W=window.innerWidth;
+ const H=window.innerHeight;
+
+ CCScene.x=
+   rnd(
+     20,
+     Math.max(40,W-120)
+   );
+
+ CCScene.y=
+   rnd(
+     60,
+     Math.max(90,H*0.35)
+   );
+
+ CCScene.vx=
+   rnd(130,230)*
+   (Math.random()<.5?-1:1);
+
+ CCScene.vy=
+   rnd(120,210)*
+   (Math.random()<.5?-1:1);
+
+ scene.classList.add('on');
+ scene.classList.remove('offer');
+
+ ccSetValues();
+ ccSetButtons(true);
+
+ const coin=
+   document.getElementById('ccCoin');
+
+ if(coin){
+
+   coin.style.transform=
+     'translate('+
+     CCScene.x+
+     'px,'+
+     CCScene.y+
+     'px)';
+
+ }
+
+ CCScene.raf=requestAnimationFrame(ccBounceLoop);
+
+ clearTimeout(CCScene.offerTo);
+
+ /* монета отскакивает ~4 сек, затем появляется предложение */
+ CCScene.offerTo=
+   setTimeout(
+     ()=>{
+
+       const sc=
+         document.getElementById('ccScene');
+
+       if(!sc||!CCScene.active)
+         return;
+
+       ccSetValues();
+       sc.classList.add('offer');
+       beep(660);
+
+     },
+     4000
+   );
+
+ beep(920);
+}
+
+function closeCCScene(){
+
+ CCScene.active=false;
+
+ clearTimeout(CCScene.offerTo);
+
+ if(CCScene.raf)
+   cancelAnimationFrame(CCScene.raf);
+
+ const scene=
+   document.getElementById('ccScene');
+
+ if(scene){
+   scene.classList.remove('on');
+   scene.classList.remove('offer');
+ }
+}
+
+async function ccChoose(kind){
+
+ if(!CCScene.active)
+   return;
+
+ ensureAds();
+
+ if(adsLeft()<=0){
+   closeCCScene();
+   return;
+ }
+
+ /* суммы считаем в момент выбора —
+    всегда актуальная стоимость монеты */
+ const v=ccCoinValue();
+
+ if(kind==='ad'){
+
+   ccSetButtons(false);
+
+   const ok=
+     await AdProvider.showRewarded();
+
+   if(!ok){
+     ccSetButtons(true);
+     toast(
+       'РЕКЛАМА ОТМЕНЕНА · ПОПЫТКА НЕ ПОТРАЧЕНА',
+       'bad'
+     );
+     return;
+   }
+
+   ccGrant(v,'ad');
+
+ }else{
+
+   ccGrant(v,'take');
+ }
+}
+
+function ccGrant(v,kind){
+
+ ensureAds();
+
+ /* оба варианта тратят одну дневную попытку */
+ S.ads.used=
+   Math.min(
+     ADS_MAX,
+     S.ads.used+1
+   );
+
+ const amount=
+   kind==='ad'?
+   v:
+   Math.max(1,Math.round(v*.25));
+
+ S.balance+=amount;
+ S.stats.collected+=amount;
+ S.stats.adRewards=(S.stats.adRewards||0)+1;
+
+ if(kind==='ad')
+   S.stats.adViews=(S.stats.adViews||0)+1;
+
+ log(
+   'CC_DROP',
+   amount,
+   (
+     kind==='ad'?
+     'реклама · 100%':
+     'монета · 25%'
+   )+
+   ' · попытка '+
+   S.ads.used+
+   '/'+ADS_MAX
+ );
+
+ toast(
+   (
+     kind==='ad'?
+     '📺 +':
+     '🪙 +'
+   )+
+   fmt(amount)+
+   ' C₵ · ПОПЫТКА '+
+   S.ads.used+
+   '/'+ADS_MAX,
+   'good'
+ );
+
+ beep(kind==='ad'?1040:880);
+
+ /* следующая сцена — через 90–240 сек реального времени */
+ CCScene.nextAt=
+   Date.now()+rnd(90000,240000);
+
+ closeCCScene();
+
+ save();
+ syncPlayer();
+ render();
+}
+
+/* ================= FULLSCREEN ================= */
+
+function toggleFullscreen(){
+
+ const d=document;
+ const el=d.documentElement;
+
+ if(
+   !d.fullscreenElement&&
+   !d.webkitFullscreenElement
+ ){
+
+   const rq=
+     el.requestFullscreen||
+     el.webkitRequestFullscreen;
+
+   if(rq){
+
+     try{
+
+       const p=rq.call(el);
+
+       if(p&&p.catch)
+         p.catch(
+           ()=>toast(
+             'ПОЛНЫЙ ЭКРАН НЕДОСТУПЕН',
+             'bad'
+           )
+         );
+
+     }catch(e){}
+   }
+
+ }else{
+
+   const ex=
+     d.exitFullscreen||
+     d.webkitExitFullscreen;
+
+   if(ex)
+     ex.call(d);
+ }
+}
+
+function updateFsBtn(){
+
+ const b=
+   document.getElementById('fsBtn');
+
+ if(!b)
+   return;
+
+ const on=
+   document.fullscreenElement||
+   document.webkitFullscreenElement;
+
+ b.textContent=
+   on?
+   '⛶ ВЫЙТИ ИЗ ЭКРАНА':
+   '⛶ ПОЛНЫЙ ЭКРАН';
+
+ b.classList.toggle('on',!!on);
+}
+
+document.addEventListener(
+ 'fullscreenchange',
+ updateFsBtn
+);
+
+document.addEventListener(
+ 'webkitfullscreenchange',
+ updateFsBtn
+);
+
 /* ================= GAME LOOP ================= */
 
 async function tick(){
@@ -2632,6 +3423,17 @@ async function tick(){
        S.v+
        H;
    }
+ }
+ /* CC-DROP: реальное время, не игровое */
+ ensureAds();
+
+ if(
+   !CCScene.active&&
+   !document.getElementById('boot')&&
+   adsLeft()>0&&
+   Date.now()>=CCScene.nextAt
+ ){
+   openCCScene();
  }
 
  render();
@@ -2754,8 +3556,27 @@ function renderHeader(){
  if(income)
    income.textContent=
      '+'+
-     fmt(totalIncome())+
      '/ч';
+
+ const adsEl=
+   document.getElementById('hAds');
+
+ if(adsEl){
+
+   ensureAds();
+
+   const left=adsLeft();
+
+   adsEl.textContent=
+     '🎁 CC '+
+     left+
+     '/'+ADS_MAX;
+
+   adsEl.style.color=
+     left>0?
+     'var(--green)':
+     'var(--muted)';
+ }
 
  if(!shield)return;
 
@@ -3686,6 +4507,24 @@ function renderProfile(){
        </div>
        <div class="l">
          ОТКУПОВ/НАБЕГОВ
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${st.adRewards||0}
+       </div>
+       <div class="l">
+         CC-ДРОПОВ
+       </div>
+     </div>
+
+     <div class="statCell">
+       <div class="v">
+         ${st.adViews||0}
+       </div>
+       <div class="l">
+         РЕКЛАМ ПРОСМОТРЕНО
        </div>
      </div>
 
