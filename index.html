@@ -2712,40 +2712,6 @@ function shareRef(){
  }
 }
 
-/* ================= SPEED ================= */
-
-function toggleSpeed(){
-
- S.speed=
-   S.speed===1?
-   60:
-   1;
-
- const btn=
-   document.getElementById(
-     'speedBtn'
-   );
-
- if(btn){
-
-   btn.textContent=
-     S.speed===1?
-     '⚡ ×1':
-     '⚡ ×60';
-
-   btn.classList.toggle(
-     'on',
-     S.speed===60
-   );
- }
-
- toast(
-   S.speed===60?
-   'ДЕМО-УСКОРЕНИЕ ×60':
-   'НОРМАЛЬНОЕ ВРЕМЯ'
- );
-}
-
 /* ================= RESET ================= */
 
 async function resetGame(){
