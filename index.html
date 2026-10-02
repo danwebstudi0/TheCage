@@ -380,11 +380,12 @@ button:disabled{
 
 .logo{
   font:bold 18px monospace;
-  letter-spacing:2px;
+  letter-spacing:.5px;
 }
 
 .logo span{
-  color:var(--red);
+  color:#4ade80;
+  margin-left:-2px;
 }
 
 .balance{
@@ -884,6 +885,47 @@ button:disabled{
   color:#f87171;
 }
 
+/* CHART */
+#capChart{
+  width:100%;
+  height:120px;
+  display:block;
+}
+
+/* RATINGS */
+.rtRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-top:1px solid var(--line);
+  padding:7px 0;
+  font:9px monospace;
+}
+
+.rtRow.me{
+  background:rgba(34,197,94,.08);
+}
+
+.rtPos{
+  color:var(--muted);
+  width:18px;
+  flex:none;
+}
+
+.rtName{
+  flex:1;
+  color:#d1d5db;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.rtVal{
+  color:var(--blue2);
+  font-weight:bold;
+  flex:none;
+}
+
 /* NAV */
 
 .nav{
@@ -895,7 +937,7 @@ button:disabled{
   max-width:700px;
   margin:auto;
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(5,1fr);
   background:rgba(7,7,12,.97);
   border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom);
@@ -920,6 +962,7 @@ button:disabled{
   }
 }
 </style>
+<base target="_blank">
 <base target="_blank">
 </head>
 
@@ -974,6 +1017,7 @@ button:disabled{
 <section id="scr-market" class="screen"></section>
 <section id="scr-chain" class="screen"></section>
 <section id="scr-profile" class="screen"></section>
+<section id="scr-ratings" class="screen"></section>
 
 </main>
 
@@ -996,10 +1040,6 @@ button:disabled{
   </div>
 </div>
 
-<button id="speedBtn" onclick="toggleSpeed()">
-  
-</button>
-
 <button id="fsBtn" onclick="toggleFullscreen()">
   ⛶ ПОЛНЫЙ ЭКРАН
 </button>
@@ -1020,6 +1060,10 @@ button:disabled{
 
 <button class="tab" data-t="profile" onclick="go('profile')">
   ◎<br>ПРОФИЛЬ
+</button>
+
+<button class="tab" data-t="ratings" onclick="go('ratings')">
+  🏆<br>РЕЙТИНГ
 </button>
 
 </nav>
@@ -1159,7 +1203,30 @@ function defaultState(){
    journal:[],
 
    /* рекламные попытки дня (CC-drop) */
-   ads:{day:'',used:0}
+   ads:{day:'',used:0},
+
+   /* ежедневный бонус */
+   daily:{day:'',streak:0},
+
+   /* уведомления и лента событий */
+   notifs:[],
+   events:[],
+
+   /* история владения */
+   history:{ownedBy:[],owned:[]},
+
+   /* достижения: key -> время получения */
+   ach:{},
+
+   /* настройки приватности */
+   settings:{hideHistory:false,publicProfile:true},
+
+   /* график капитала */
+   chart:[],
+   chartLast:0,
+
+   /* продажа актива */
+   listed:null
  };
 }
 
@@ -1229,6 +1296,27 @@ function load(){
 
      if(typeof s.ads.used!=='number')
        s.ads.used=0;
+
+     if(!s.daily||typeof s.daily!=='object')
+       s.daily={day:'',streak:0};
+
+     if(!Array.isArray(s.notifs))
+       s.notifs=[];
+
+     if(!Array.isArray(s.events))
+       s.events=[];
+
+     if(!s.history||typeof s.history!=='object')
+       s.history={ownedBy:[],owned:[]};
+
+     if(!s.ach||typeof s.ach!=='object')
+       s.ach={};
+
+     if(!s.settings||typeof s.settings!=='object')
+       s.settings={hideHistory:false,publicProfile:true};
+
+     if(!Array.isArray(s.chart))
+       s.chart=[];
 
      return s;
    }
@@ -1572,6 +1660,14 @@ async function loadMyRelations(){
 
  try{
 
+   const hadPrev=S.relationsLoaded===true;
+
+   const prevOwner=S.owner?String(S.owner.id):null;
+
+   const prevVassals=new Set(
+     (S.vassals||[]).map(v=>String(v.id))
+   );
+
    const {data:me,error:meError}=
      await sb
        .from('players')
@@ -1635,7 +1731,7 @@ async function loadMyRelations(){
      S.owner=null;
    }
 
-   /* VASSALS */
+   /* VASSALS (уровень 1) */
 
    const {data:vassals,error:vError}=
      await sb
@@ -1671,6 +1767,155 @@ async function loadMyRelations(){
        }));
 
    }
+
+   /* ПОЛНАЯ ЦЕПЬ: вассалы вассалов (до 3 уровней) */
+
+   const nodeById={};
+
+   S.vassals.forEach(v=>{
+     v.subs=[];
+     nodeById[v.id]=v;
+   });
+
+   let frontier=
+     S.vassals.map(v=>v.id);
+
+   for(let d=0;d<2&&frontier.length;d++){
+
+     const {data:rows}=
+       await sb
+         .from('players')
+         .select(
+           'id,username,income,vassal_of'
+         )
+         .in(
+           'vassal_of',
+           frontier
+         )
+         .limit(200);
+
+     if(!rows||!rows.length)
+       break;
+
+     const next=[];
+
+     rows.forEach(r=>{
+
+       const node={
+         id:String(r.id),
+         name:r.username||'Игрок',
+         income:Number(r.income||10),
+         lvl:1,
+         subs:[]
+       };
+
+       nodeById[node.id]=node;
+
+       const parent=
+         nodeById[String(r.vassal_of)];
+
+       if(parent){
+         parent.subs.push(node);
+         next.push(node.id);
+       }
+
+     });
+
+     frontier=next;
+   }
+
+   /* УВЕДОМЛЕНИЯ + ЛЕНТА по изменениям */
+
+   if(hadPrev){
+
+     const newOwner=
+       S.owner?String(S.owner.id):null;
+
+     if(prevOwner!==newOwner){
+
+       if(newOwner){
+
+         addNotif(
+           '⚠ ТЕБЯ КУПИЛ @'+S.owner.name,
+           'bad'
+         );
+
+         addEvent(
+           '@'+S.owner.name+
+           ' КУПИЛ ИГРОКА @'+
+           playerName()
+         );
+
+         histPush('ownedBy',{
+           name:S.owner.name,
+           time:Date.now()
+         });
+
+       }else if(prevOwner){
+
+         addNotif(
+           '🔓 ТЫ ВЫРВАЛСЯ ИЗ ЦЕПИ',
+           'good'
+         );
+
+         addEvent(
+           '@'+playerName()+
+           ' ВЫРВАЛСЯ ИЗ ЦЕПИ'
+         );
+       }
+     }
+
+     const curVassals=new Set(
+       S.vassals.map(v=>String(v.id))
+     );
+
+     prevVassals.forEach(vid=>{
+
+       if(!curVassals.has(vid)){
+
+         addNotif(
+           '⛓ ОДИН ИЗ ТВОИХ ВАССАЛОВ СБЕЖАЛ',
+           'bad'
+         );
+
+         addEvent(
+           'ВАССАЛ ВЫРВАЛСЯ ИЗ ЦЕПИ @'+
+           playerName()
+         );
+       }
+     });
+
+     curVassals.forEach(vid=>{
+
+       if(!prevVassals.has(vid)){
+
+         const v=
+           S.vassals.find(
+             x=>String(x.id)===vid
+           );
+
+         const nm=v?v.name:'?';
+
+         addNotif(
+           '⛓ НОВЫЙ ВАССАЛ @'+nm,
+           'good'
+         );
+
+         addEvent(
+           '@'+nm+
+           ' СТАЛ ВАССАЛОМ @'+
+           playerName()
+         );
+
+         histPush('owned',{
+           name:nm,
+           time:Date.now()
+         });
+       }
+     });
+   }
+
+   S.relationsLoaded=true;
 
    save();
 
@@ -2447,6 +2692,17 @@ async function buyBot(id){
 
    S.stats.purch++;
 
+ histPush('owned',{
+   name:target.username||'Игрок',
+   time:Date.now()
+ });
+
+ addEvent(
+   '@'+playerName()+
+   ' КУПИЛ ИГРОКА @'+
+   (target.username||'Игрок')
+ );
+
    log(
      'PLAYER_BUY',
      -price,
@@ -2561,6 +2817,13 @@ async function ransom(){
    'good'
  );
 
+ addNotif('🔓 ТЫ ВЫРВАЛСЯ ИЗ ЦЕПИ','good');
+
+ addEvent(
+   '@'+playerName()+
+   ' ВЫРВАЛСЯ ИЗ ЦЕПИ'
+ );
+
  beep(1040);
 
  save();
@@ -2619,6 +2882,8 @@ function buyShield(t){
  S.shieldCd=
    S.v+
    6*H;
+
+ S.stats.shields=(S.stats.shields||0)+1;
 
  log(
    'SHIELD',
@@ -2790,6 +3055,22 @@ function doRaid(){
    S.owner.name+
    ' купил тебя'
  );
+
+ addNotif(
+   '⚠ ТЕБЯ КУПИЛ @'+S.owner.name,
+   'bad'
+ );
+
+ addEvent(
+   '@'+S.owner.name+
+   ' КУПИЛ ИГРОКА @'+
+   playerName()
+ );
+
+ histPush('ownedBy',{
+   name:S.owner.name,
+   time:Date.now()
+ });
 
  toast(
    '⚠ ТЕБЯ КУПИЛ @'+
@@ -3323,6 +3604,795 @@ document.addEventListener(
  updateFsBtn
 );
 
+
+/* ================= DAILY / ACHIEVEMENTS / NOTIFS / CHART / RATINGS ================= */
+
+function addNotif(text,kind){
+
+ if(!Array.isArray(S.notifs))
+   S.notifs=[];
+
+ S.notifs.unshift({
+   text:text,
+   kind:kind||'',
+   time:Date.now()
+ });
+
+ if(S.notifs.length>25)
+   S.notifs.length=25;
+}
+
+function addEvent(text){
+
+ if(!Array.isArray(S.events))
+   S.events=[];
+
+ S.events.unshift({
+   text:text,
+   time:Date.now()
+ });
+
+ if(S.events.length>30)
+   S.events.length=30;
+}
+
+function histPush(list,item){
+
+ if(!S.history||typeof S.history!=='object')
+   S.history={ownedBy:[],owned:[]};
+
+ if(!Array.isArray(S.history[list]))
+   S.history[list]=[];
+
+ S.history[list].unshift(item);
+
+ if(S.history[list].length>15)
+   S.history[list].length=15;
+}
+
+function timeAgo(t){
+
+ const s=
+   Math.max(
+     0,
+     Math.floor(
+       (Date.now()-t)/1000
+     )
+   );
+
+ if(s<60)
+   return s+'с назад';
+
+ if(s<3600)
+   return Math.floor(s/60)+'м назад';
+
+ if(s<86400)
+   return Math.floor(s/3600)+'ч назад';
+
+ return Math.floor(s/86400)+'д назад';
+}
+
+function countNodes(nodes){
+
+ let n=0;
+
+ (nodes||[]).forEach(x=>{
+   n++;
+   n+=countNodes(x.subs||[]);
+ });
+
+ return n;
+}
+
+/* ---------- ЕЖЕДНЕВНЫЙ БОНУС ---------- */
+
+function yKey(){
+
+ const d=new Date(Date.now()-86400000);
+
+ return d.getFullYear()+'-'+
+   String(d.getMonth()+1).padStart(2,'0')+'-'+
+   String(d.getDate()).padStart(2,'0');
+}
+
+function dailyReward(){
+
+ const streak=(S.daily?.streak||0)+1;
+
+ /* награда из экономики: рыночная стоимость × (0.25 + бонус серии) */
+ return Math.max(
+   50,
+   Math.round(
+     myValue()*
+     (0.25+Math.min(streak,7)*0.05)
+   )
+ );
+}
+
+function claimDaily(){
+
+ if(!S.daily)
+   S.daily={day:'',streak:0};
+
+ if(S.daily.day===todayKey()){
+
+   toast(
+     'БОНУС УЖЕ ЗАБРАН СЕГОДНЯ',
+     'bad'
+   );
+
+   return;
+ }
+
+ const streak=
+   (S.daily.day===yKey())?
+   (S.daily.streak||0)+1:
+   1;
+
+ S.daily.day=todayKey();
+ S.daily.streak=streak;
+
+ const r=dailyReward();
+
+ S.balance+=r;
+ S.stats.collected+=r;
+
+ log(
+   'DAILY',
+   r,
+   'серия '+streak+'д'
+ );
+
+ addEvent(
+   '@'+playerName()+
+   ' ЗАБРАЛ ЕЖЕДНЕВНЫЙ БОНУС (СЕРИЯ '+
+   streak+'Д)'
+ );
+
+ toast(
+   '🎁 ЕЖЕДНЕВНЫЙ БОНУС +'+
+   fmt(r)+
+   ' C₵ · СЕРИЯ '+
+   streak+
+   'Д',
+   'good'
+ );
+
+ beep(990);
+
+ save();
+ syncPlayer();
+ render();
+}
+
+/* ---------- ДОСТИЖЕНИЯ (награды из экономики) ---------- */
+
+const ACH=[
+ {
+   key:'first_vassal',
+   label:'ПЕРВЫЙ ВАССАЛ',
+   desc:'приобрети первого вассала',
+   reward:()=>Math.max(100,Math.round(myValue()*.5)),
+   done:()=>countNodes(S.vassals)>=1
+ },
+ {
+   key:'vassals_10',
+   label:'СИНДИКАТ',
+   desc:'10 узлов в твоей цепи',
+   reward:()=>Math.max(500,Math.round(myValue()*1.5)),
+   done:()=>countNodes(S.vassals)>=10
+ },
+ {
+   key:'capital_1m',
+   label:'МИЛЛИОНЕР',
+   desc:'собери 1 000 000 C₵ суммарно',
+   reward:()=>Math.round(Math.max(1000,S.stats.collected*.05)),
+   done:()=>S.stats.collected>=1e6
+ },
+ {
+   key:'income_1k',
+   label:'МАГНАТ',
+   desc:'общий доход 1 000/ч',
+   reward:()=>Math.max(1000,Math.round(totalIncome()*24*.5)),
+   done:()=>totalIncome()>=1000
+ },
+ {
+   key:'farms_5',
+   label:'АРХИТЕКТОР',
+   desc:'5 узлов на терминале',
+   reward:()=>Math.max(100,Math.round(myValue()*.4)),
+   done:()=>S.farms.length>=5
+ },
+ {
+   key:'first_ad',
+   label:'РЕКЛАМОДАТЕЛЬ',
+   desc:'забери первый CC-drop',
+   reward:()=>Math.max(50,Math.round(myValue()*.3)),
+   done:()=>(S.stats.adRewards||0)>=1
+ },
+ {
+   key:'shield_up',
+   label:'ПОД ЗАЩИТОЙ',
+   desc:'купи любой щит',
+   reward:()=>Math.max(100,Math.round(personalIncome()*10)),
+   done:()=>(S.stats.shields||0)>=1
+ },
+ {
+   key:'ransom_1',
+   label:'ВОЛЬНЫЙ',
+   desc:'выкупись из чужой цепи',
+   reward:()=>Math.max(100,Math.round(myValue()*.3)),
+   done:()=>S.stats.ransoms>=1
+ },
+ {
+   key:'daily_3',
+   label:'СТАЖЁР',
+   desc:'3 дня входа подряд',
+   reward:()=>Math.max(100,Math.round(myValue()*.3)),
+   done:()=>(S.daily?.streak||0)>=3
+ }
+];
+
+function checkAchievements(){
+
+ if(!S.ach)
+   S.ach={};
+
+ ACH.forEach(a=>{
+
+   if(S.ach[a.key])
+     return;
+
+   let ok=false;
+
+   try{
+     ok=a.done();
+   }catch(e){}
+
+   if(!ok)
+     return;
+
+   S.ach[a.key]=Date.now();
+
+   let r=0;
+
+   try{
+     r=a.reward();
+   }catch(e){}
+
+   S.balance+=r;
+   S.stats.collected+=r;
+
+   log(
+     'ACH',
+     r,
+     a.label
+   );
+
+   addNotif(
+     '🏅 ДОСТИЖЕНИЕ: '+
+     a.label+
+     ' · +'+fmt(r),
+     'good'
+   );
+
+   addEvent(
+     '@'+playerName()+
+     ' ПОЛУЧИЛ ДОСТИЖЕНИЕ «'+
+     a.label+
+     '»'
+   );
+
+   toast(
+     '🏅 '+a.label+' · +'+fmt(r)+' C₵',
+     'good'
+   );
+
+   beep(1100);
+ });
+}
+
+/* ---------- ГРАФИК КАПИТАЛА ---------- */
+
+function drawChart(){
+
+ const cv=
+   document.getElementById('capChart');
+
+ if(!cv)
+   return;
+
+ const dpr=
+   window.devicePixelRatio||1;
+
+ const w=cv.clientWidth||300;
+ const h=120;
+
+ cv.width=w*dpr;
+ cv.height=h*dpr;
+
+ const ctx=cv.getContext('2d');
+
+ ctx.scale(dpr,dpr);
+ ctx.clearRect(0,0,w,h);
+
+ const data=S.chart||[];
+
+ if(data.length<2){
+
+   ctx.fillStyle='#626276';
+   ctx.font='9px monospace';
+   ctx.fillText(
+     'НАКАПЛИВАЮТСЯ ДАННЫЕ...',
+     8,
+     h/2
+   );
+
+   return;
+ }
+
+ const vals=data.map(p=>p.v);
+
+ const min=Math.min(...vals);
+ const max=Math.max(...vals);
+
+ const rng=Math.max(1,max-min);
+
+ ctx.beginPath();
+
+ data.forEach((p,i)=>{
+
+   const x=
+     i/(data.length-1)*(w-4)+2;
+
+   const y=
+     h-6-
+     ((p.v-min)/rng)*(h-20);
+
+   if(i)
+     ctx.lineTo(x,y);
+   else
+     ctx.moveTo(x,y);
+
+ });
+
+ ctx.strokeStyle='#22c55e';
+ ctx.lineWidth=2;
+ ctx.stroke();
+
+ ctx.lineTo(w-2,h-4);
+ ctx.lineTo(2,h-4);
+ ctx.closePath();
+
+ ctx.fillStyle='rgba(34,197,94,.12)';
+ ctx.fill();
+
+ ctx.fillStyle='#626276';
+ ctx.font='8px monospace';
+
+ ctx.fillText(fmt(max),4,10);
+ ctx.fillText(fmt(min),4,h-6);
+}
+
+/* ---------- СТАТИСТИКА СЕРВЕРА ---------- */
+
+const SERVER={
+ t:0,
+ total:0,
+ capital:0,
+ income:0,
+ chains:0
+};
+
+async function loadServerStats(){
+
+ if(Date.now()-SERVER.t<60000)
+   return;
+
+ SERVER.t=Date.now();
+
+ try{
+
+   const {data,count,error}=
+     await sb
+       .from('players')
+       .select(
+         'coins,income,vassal_of',
+         {count:'exact'}
+       )
+       .limit(1000);
+
+   if(error){
+
+     console.error(error);
+     return;
+   }
+
+   SERVER.total=
+     count||(data||[]).length;
+
+   SERVER.capital=
+     (data||[]).reduce(
+       (a,p)=>a+Number(p.coins||0),
+       0
+     );
+
+   SERVER.income=
+     (data||[]).reduce(
+       (a,p)=>a+Number(p.income||0),
+       0
+     );
+
+   const owners=new Set(
+     (data||[])
+       .filter(p=>p.vassal_of)
+       .map(p=>String(p.vassal_of))
+   );
+
+   SERVER.chains=owners.size;
+
+   renderRatings();
+
+ }catch(e){
+
+   console.error(e);
+ }
+}
+
+/* ---------- РЕЙТИНГИ ---------- */
+
+const RATINGS={
+ t:0,
+ rows:[]
+};
+
+async function loadRatings(){
+
+ if(Date.now()-RATINGS.t<60000)
+   return;
+
+ RATINGS.t=Date.now();
+
+ try{
+
+   const {data,error}=
+     await sb
+       .from('players')
+       .select(
+         'id,username,coins,income,market_value,vassal_of'
+       )
+       .limit(1000);
+
+   if(error){
+
+     console.error(error);
+     return;
+   }
+
+   const vassalCount={};
+   const children={};
+
+   (data||[]).forEach(p=>{
+
+     if(p.vassal_of){
+
+       vassalCount[p.vassal_of]=
+         (vassalCount[p.vassal_of]||0)+1;
+
+       (
+         children[p.vassal_of]=
+         children[p.vassal_of]||[]
+       ).push(String(p.id));
+     }
+   });
+
+   const chainCache={};
+
+   function chainOf(pid){
+
+     if(chainCache[pid]!==undefined)
+       return chainCache[pid];
+
+     let total=0;
+
+     const stack=[pid];
+     const seen=new Set();
+
+     while(stack.length){
+
+       const cur=stack.pop();
+
+       if(seen.has(cur))
+         continue;
+
+       seen.add(cur);
+
+       (children[cur]||[]).forEach(
+         ch=>{
+           total++;
+           stack.push(ch);
+         }
+       );
+     }
+
+     chainCache[pid]=total;
+
+     return total;
+   }
+
+   RATINGS.rows=
+     (data||[]).map(p=>({
+
+       id:String(p.id),
+
+       name:
+         p.username||
+         'Игрок',
+
+       coins:
+         Number(p.coins||0),
+
+       income:
+         Number(p.income||0),
+
+       mv:
+         Number(
+           p.market_value||0
+         ),
+
+       vassals:
+         vassalCount[p.id]||0,
+
+       chain:
+         chainOf(String(p.id))
+     }));
+
+   renderRatings();
+
+ }catch(e){
+
+   console.error(e);
+ }
+}
+
+function ratingTable(title,icon,rows,key,label){
+
+ const top=rows.slice(0,10);
+
+ return (
+   '<div class="panel">'+
+     '<div class="ptitle">'+
+       icon+' '+title+
+     '</div>'+
+     (
+       top.length?
+
+       top.map((r,i)=>{
+
+         const me=
+           playerId()&&
+           String(r.id)===
+           String(playerId());
+
+         return (
+           '<div class="rtRow'+
+             (me?' me':'')+
+           '">'+
+             '<span class="rtPos">'+
+               (i+1)+
+             '</span>'+
+             '<span class="rtName">'+
+               '@'+r.name+
+             '</span>'+
+             '<span class="rtVal">'+
+               fmt(r[key])+
+               (label?' '+label:'')+
+             '</span>'+
+           '</div>'
+         );
+
+       }).join(''):
+
+       '<div class="mini">пока пусто</div>'
+     )+
+   '</div>'
+ );
+}
+
+function renderRatings(){
+
+ const el=
+   document.getElementById(
+     'scr-ratings'
+   );
+
+ if(!el)
+   return;
+
+ const rows=RATINGS.rows;
+
+ const byMv=
+   [...rows].sort(
+     (a,b)=>b.mv-a.mv
+   );
+
+ const byCoins=
+   [...rows].sort(
+     (a,b)=>b.coins-a.coins
+   );
+
+ const byInc=
+   [...rows].sort(
+     (a,b)=>b.income-a.income
+   );
+
+ const byVas=
+   [...rows].sort(
+     (a,b)=>b.vassals-a.vassals
+   );
+
+ const byChain=
+   [...rows].sort(
+     (a,b)=>b.chain-a.chain
+   );
+
+ el.innerHTML=
+   '<div class="panel" style="border-color:rgba(245,158,11,.3)">'+
+     '<div class="ptitle">🌐 СЕРВЕР · LIVE</div>'+
+     '<div class="statGrid">'+
+       '<div class="statCell">'+
+         '<div class="v">'+fmt(SERVER.total)+'</div>'+
+         '<div class="l">АККАУНТОВ В РЕЕСТРЕ</div>'+
+       '</div>'+
+       '<div class="statCell">'+
+         '<div class="v">'+fmt(SERVER.capital)+'</div>'+
+         '<div class="l">ОБЩИЙ КАПИТАЛ C₵</div>'+
+       '</div>'+
+       '<div class="statCell">'+
+         '<div class="v">'+fmt(SERVER.income)+'</div>'+
+         '<div class="l">ОБЩИЙ ДОХОД /Ч</div>'+
+       '</div>'+
+       '<div class="statCell">'+
+         '<div class="v">'+fmt(SERVER.chains)+'</div>'+
+         '<div class="l">АКТИВНЫХ ЦЕПЕЙ</div>'+
+       '</div>'+
+     '</div>'+
+     '<div class="mini" style="margin-top:8px">'+
+       'обновление раз в минуту'+
+     '</div>'+
+   '</div>'+
+
+   ratingTable(
+     'ГЛОБАЛЬНЫЙ РЕЙТИНГ · ПО СТОИМОСТИ',
+     '🏆',
+     byMv,
+     'mv',
+     'C₵'
+   )+
+
+   '<div class="sectTitle">'+
+     '<span>ОТДЕЛЬНЫЕ РЕЙТИНГИ</span>'+
+   '</div>'+
+
+   ratingTable('ПО КАПИТАЛУ','💰',byCoins,'coins','C₵')+
+   ratingTable('ПО ДОХОДУ','⚡',byInc,'income','/ч')+
+   ratingTable('ПО ВАССАЛАМ','🔗',byVas,'vassals','чел.')+
+   ratingTable('ПО РАЗМЕРУ ЦЕПИ','👑',byChain,'chain','узлов');
+}
+
+/* ---------- НАСТРОЙКИ ---------- */
+
+function toggleSetting(k){
+
+ if(
+   !S.settings||
+   typeof S.settings!=='object'
+ )
+   S.settings={
+     hideHistory:false,
+     publicProfile:true
+   };
+
+ S.settings[k]=!S.settings[k];
+
+ save();
+ render();
+
+ toast('НАСТРОЙКА ОБНОВЛЕНА');
+}
+
+/* ---------- ПРОДАЖА АКТИВА ---------- */
+
+async function listSelf(){
+
+ const price=
+   Math.max(1,Math.round(myValue()));
+
+ S.listed={
+   price:price,
+   until:Date.now()+24*H
+ };
+
+ log(
+   'LIST',
+   0,
+   'себя за '+fmt(price)
+ );
+
+ addEvent(
+   '@'+playerName()+
+   ' ВЫСТАВИЛ СЕБЯ НА РЫНОК ЗА '+
+   fmt(price)+
+   ' C₵'
+ );
+
+ toast(
+   '💰 ТЫ НА РЫНКЕ · '+
+   fmt(price)+
+   ' C₵ · 24Ч',
+   'good'
+ );
+
+ const id=playerId();
+
+ if(id){
+
+   try{
+
+     await sb
+       .from('players')
+       .update({
+         listed_price:price
+       })
+       .eq(
+         'id',
+         id
+       );
+
+   }catch(e){
+
+     /*
+       Колонки listed_price пока нет в таблице —
+       игра работает, видимость лота для других
+       добавим отдельной миграцией Supabase.
+     */
+   }
+ }
+
+ save();
+ render();
+}
+
+function unlistSelf(){
+
+ S.listed=null;
+
+ const id=playerId();
+
+ if(id){
+
+   try{
+
+     sb
+       .from('players')
+       .update({
+         listed_price:null
+       })
+       .eq(
+         'id',
+         id
+       )
+       .then(()=>{});
+
+   }catch(e){}
+ }
+
+ toast('ТЫ СНЯТ С РЫНКА');
+
+ save();
+ render();
+}
+
 /* ================= GAME LOOP ================= */
 
 async function tick(){
@@ -3390,6 +4460,17 @@ async function tick(){
        H;
    }
  }
+ /* график капитала: точка каждые 30с, держим 2 часа */
+ if(now-(S.chartLast||0)>30000){
+   S.chartLast=now;
+   S.chart.push({t:now,v:Math.round(S.balance)});
+   if(S.chart.length>240)
+     S.chart.shift();
+ }
+
+ /* достижения */
+ checkAchievements();
+
  /* CC-DROP: реальное время, не игровое */
  ensureAds();
 
@@ -3425,6 +4506,10 @@ async function startDatabase(){
 
    await loadRealMarket();
 
+   loadServerStats();
+
+   loadRatings();
+
    render();
 
  }catch(e){
@@ -3456,6 +4541,11 @@ function go(t){
  if(screen)
    screen.classList.add('active');
 
+ if(t==='ratings'){
+   loadRatings();
+   loadServerStats();
+ }
+
  document
    .querySelectorAll('.tab')
    .forEach(
@@ -3478,22 +4568,10 @@ function render(){
  renderMarket();
  renderChain();
  renderProfile();
+ renderRatings();
 
- const speedBtn=
-   document.getElementById(
-     'speedBtn'
-   );
-
- if(speedBtn){
-
-   speedBtn.textContent=
-     S.speed===1?
-
-   speedBtn.classList.toggle(
-     'on',
-     S.speed===60
-   );
- }
+ /* график капитала — canvas уже в DOM */
+ drawChart();
 }
 
 function renderHeader(){
@@ -3520,6 +4598,7 @@ function renderHeader(){
  if(income)
    income.textContent=
      '+'+
+     fmt(totalIncome())+
      '/ч';
 
  const adsEl=
@@ -4229,6 +5308,7 @@ function renderChain(){
    <span>
      ТВОИ ВАССАЛЫ ·
      ${S.vassals.length}
+     · цепь ${countNodes(S.vassals)} узлов
      · налог цепи
      +${fmt(taxIncome())}/ч
    </span>
@@ -4409,6 +5489,239 @@ function renderProfile(){
 
    }).join('')+
    `</div>`;
+
+
+ /* --- ЕЖЕДНЕВНЫЙ БОНУС --- */
+
+ const dailyClaimed=
+   S.daily&&
+   S.daily.day===todayKey();
+
+ const dailyStreak=
+   (S.daily&&S.daily.streak)||0;
+
+ const dailyAmt=
+   dailyClaimed?0:dailyReward();
+
+ h+=
+ '<div class="panel" style="border-color:rgba(34,197,94,.3)">'+
+   '<div class="ptitle">🎁 ЕЖЕДНЕВНЫЙ БОНУС</div>'+
+   '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'+
+     '<div>'+
+       '<div class="mono" style="font-size:18px;font-weight:800;color:var(--green)">+'+
+         fmt(dailyAmt)+
+       ' C₵</div>'+
+       '<div class="mini">серия входа: '+
+         dailyStreak+
+       'д · растёт каждый день подряд</div>'+
+     '</div>'+
+     '<button class="buyBtn" '+
+       (dailyClaimed?'disabled':'')+
+       ' onclick="claimDaily()">'+
+       (dailyClaimed?'ЗАБРАНО':'ЗАБРАТЬ')+
+     '</button>'+
+   '</div>'+
+ '</div>';
+
+ /* --- ДОСТИЖЕНИЯ --- */
+
+ const achGot=
+   ACH.filter(
+     a=>S.ach&&S.ach[a.key]
+   ).length;
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">🏅 ДОСТИЖЕНИЯ · '+
+     achGot+
+   '/'+ACH.length+'</div>'+
+   ACH.map(a=>{
+
+     const got=
+       S.ach&&S.ach[a.key];
+
+     let rw=0;
+
+     try{
+       rw=a.reward();
+     }catch(e){}
+
+     return (
+       '<div class="shieldRow">'+
+         '<div>'+
+           '<div class="nm">'+a.label+'</div>'+
+           '<div class="ds">'+
+             a.desc+
+             ' · награда +'+fmt(rw)+' C₵'+
+           '</div>'+
+         '</div>'+
+         '<span style="font:bold 11px monospace;color:'+
+           (got?'var(--green)':'var(--muted)')+
+         '">'+
+           (got?'✓':'⋯')+
+         '</span>'+
+       '</div>'
+     );
+
+   }).join('')+
+ '</div>';
+
+ /* --- ГРАФИК КАПИТАЛА --- */
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">📈 РОСТ КАПИТАЛА · ПОСЛЕДНИЕ 2Ч</div>'+
+   '<canvas id="capChart"></canvas>'+
+   '<div class="capLabel">'+
+     '<span>СЕЙЧАС '+fmt(S.balance)+' C₵</span>'+
+     '<span>ТОЧКА КАЖДЫЕ 30С</span>'+
+   '</div>'+
+ '</div>';
+
+ /* --- УВЕДОМЛЕНИЯ --- */
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">🔔 УВЕДОМЛЕНИЯ</div>'+
+   (
+     (S.notifs&&S.notifs.length)?
+
+     S.notifs.map(n=>
+       '<div class="jitem">'+
+         '<span class="nt">'+n.text+'</span>'+
+         '<span class="mini">'+timeAgo(n.time)+'</span>'+
+       '</div>'
+     ).join(''):
+
+     '<div class="mini">пусто</div>'
+   )+
+ '</div>';
+
+ /* --- ЛЕНТА СОБЫТИЙ --- */
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">📡 ЛЕНТА СОБЫТИЙ</div>'+
+   (
+     (S.events&&S.events.length)?
+
+     S.events.map(n=>
+       '<div class="jitem">'+
+         '<span class="nt">'+n.text+'</span>'+
+         '<span class="mini">'+timeAgo(n.time)+'</span>'+
+       '</div>'
+     ).join(''):
+
+     '<div class="mini">пусто</div>'
+   )+
+ '</div>';
+
+ /* --- ИСТОРИЯ ВЛАДЕНИЯ --- */
+
+ if(
+   !S.settings||
+   !S.settings.hideHistory
+ ){
+
+   h+=
+   '<div class="panel">'+
+     '<div class="ptitle">📜 ИСТОРИЯ ВЛАДЕНИЯ</div>'+
+     '<div class="mini">ТЕБЯ ВЛАДЕЛИ:</div>'+
+     (
+       (S.history&&
+        S.history.ownedBy&&
+        S.history.ownedBy.length)?
+
+       S.history.ownedBy.map(x=>
+         '<div class="jitem">'+
+           '<span class="nt">@'+x.name+'</span>'+
+           '<span class="mini">'+timeAgo(x.time)+'</span>'+
+         '</div>'
+       ).join(''):
+
+       '<div class="mini">— никто</div>'
+     )+
+     '<div class="mini" style="margin-top:8px">ТЫ ВЛАДЕЛ:</div>'+
+     (
+       (S.history&&
+        S.history.owned&&
+        S.history.owned.length)?
+
+       S.history.owned.map(x=>
+         '<div class="jitem">'+
+           '<span class="nt">@'+x.name+'</span>'+
+           '<span class="mini">'+timeAgo(x.time)+'</span>'+
+         '</div>'
+       ).join(''):
+
+       '<div class="mini">— никем</div>'
+     )+
+   '</div>';
+ }
+
+ /* --- ПРОДАЖА АКТИВА --- */
+
+ const listedNow=
+   S.listed&&
+   S.listed.until>Date.now();
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">💰 ПРОДАЖА АКТИВА</div>'+
+   (
+     listedNow?
+
+     (
+       '<div class="mini">выставлен за '+
+         '<b style="color:var(--green)">'+
+           fmt(S.listed.price)+
+         ' C₵</b> · ещё '+
+         fmtT(S.listed.until-Date.now())+
+       '</div>'+
+       '<button class="dangerBtn" style="margin-top:10px" onclick="unlistSelf()">'+
+         'СНЯТЬ С ПРОДАЖИ'+
+       '</button>'
+     ):
+
+     (
+       '<div class="mini">цена: '+
+         '<b style="color:var(--green)">'+
+           fmt(Math.max(1,Math.round(myValue())))+
+         ' C₵</b> = твоя рыночная стоимость</div>'+
+       '<button class="buyBtn" style="width:100%;margin-top:10px;padding:12px" onclick="listSelf()">'+
+         'ВЫСТАВИТЬ СЕБЯ НА РЫНОК'+
+       '</button>'
+     )
+   )+
+   '<div class="mini" style="margin-top:8px">'+
+     'покупатель автоматически станет твоим хозяином · налог 25%'+
+   '</div>'+
+ '</div>';
+
+ /* --- НАСТРОЙКИ --- */
+
+ h+=
+ '<div class="panel">'+
+   '<div class="ptitle">⚙ НАСТРОЙКИ</div>'+
+   '<div class="shieldRow">'+
+     '<div>'+
+       '<div class="nm">ПУБЛИЧНЫЙ ПРОФИЛЬ</div>'+
+       '<div class="ds">статистика видна другим игрокам</div>'+
+     '</div>'+
+     '<button class="fbtn" onclick="toggleSetting(\'publicProfile\')">'+
+       ((S.settings&&S.settings.publicProfile)?'ВКЛ':'ВЫКЛ')+
+     '</button>'+
+   '</div>'+
+   '<div class="shieldRow">'+
+     '<div>'+
+       '<div class="nm">СКРЫТЬ ИСТОРИЮ</div>'+
+       '<div class="ds">не показывать, кто тобой владел</div>'+
+     '</div>'+
+     '<button class="fbtn" onclick="toggleSetting(\'hideHistory\')">'+
+       ((S.settings&&S.settings.hideHistory)?'ВКЛ':'ВЫКЛ')+
+     '</button>'+
+   '</div>'+
+ '</div>';
 
  h+=`
 
